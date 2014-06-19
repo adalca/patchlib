@@ -12,7 +12,7 @@ classdef patchview < handle
     properties (Constant)
         
       
-        figure = ifelse(exist('figuresc', 'file') == 2, @figuresc, @figure);
+        figure = ifelse(exist('figuresc', 'file') == 2, @figuresc, @figure); %#ok<REDEF>
     end
     
     methods (Static)
@@ -23,6 +23,7 @@ classdef patchview < handle
         varargout = patches2D(patches, patchSize, caxisrange, gridtype);
         layers2D(layers, mode, varargin);
         patchRef2D(vol, refs, vIdx, pIdx, rIdx, varargin);
+        rect = drawPatchRect(patchloc, patchSize, color);
     end
     
 end

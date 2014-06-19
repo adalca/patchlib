@@ -88,7 +88,7 @@ function varargout = patchesInImage(im, patchSize, patchLoc, varargin)
     end
     
     % show image and patches
-    setup.h.main = patchlib.figview();
+    setup.h.main = patchview.figure();
     [patches, setup] = drawAllPatches(patches, setup, im);
     usedColors(1:nPatches) = true;
     figure(setup.h.main);
@@ -104,8 +104,8 @@ function varargout = patchesInImage(im, patchSize, patchLoc, varargin)
             % get the input - x, y, and mouse button used
             clear x y
             [x, y, button] = ginput(1);
-            assert(numel(x) == 1 && x > 0, 'patchLib:CleanFigClose', 'unexpected input');
-            assert(numel(y) == 1 && y > 1, 'patchLib:CleanFigClose', 'unexpected input');
+            assert(numel(x) == 1 && x > 0, 'patchview:CleanFigClose', 'unexpected input');
+            assert(numel(y) == 1 && y > 1, 'patchview:CleanFigClose', 'unexpected input');
             x = round(x);
             y = round(y);
             clickedAx = gca;
@@ -218,7 +218,7 @@ function patch = prepDrawPatch(patchLoc, patchSize, im, idxmode)
     y = s(1):e(1);
     x = s(2):e(2);
     patch.vol = im(y, x, :);
-    patch.start = [s(1)-0.5, s(2)-0.5];
+    patch.start = [s(1), s(2)];
     patch.loc = patchLoc;
     patch.size = [numel(y), numel(x)];
     
@@ -238,7 +238,7 @@ function [rectInImage, rect, subploth] = drawPatch(patch, idx, setup, ~)
     
     % draw rectangle in image
     subplot(sz(1), sz(2) + 1, 1); hold on;
-    rectInImage = patchlib.drawPatchRect(patch.start, patch.size, color);
+    rectInImage = patchview.drawPatchRect(patch.start, patch.size, color);
       
     % draw patch in subPlot
     col = sz(2) * nElems + mod(idx - 1, nElems) + 1;
@@ -246,7 +246,7 @@ function [rectInImage, rect, subploth] = drawPatch(patch, idx, setup, ~)
     didx = sub2ind([(sz(2)+1)*nElems, nElems], col, row);
     subploth = subplot(nElems, (sz(2)+1) * nElems, didx);
     imshow(patch.vol);
-    rect = patchlib.drawPatchRect([1, 1], patch.size, color);
+    rect = patchview.drawPatchRect([1, 1], patch.size, color);
 end
 
 function [patches, setup] = drawAllPatches(patches, setup, im)
