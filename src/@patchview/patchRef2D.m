@@ -7,7 +7,7 @@ function patchRef2D(vol, refs, vIdx, pIdx, rIdx, patchSize, varargin)
     nPatches = size(vIdx, 1);
     
     % show figure
-    patchlib.figview();
+    patchview.figure();
     
     % show image
     subplot(nRows, nRefs+1, 1);
@@ -21,10 +21,10 @@ function patchRef2D(vol, refs, vIdx, pIdx, rIdx, patchSize, varargin)
     color = jitter(nPatches);    
     for i = 1:nPatches
         subplot(nRows, nRefs+1, 1);
-        patchlib.drawPatchRect(volGrid(vIdx(i), :), patchSize, color(i, :));
+        patchview.drawPatchRect(volGrid(vIdx(i), :), patchSize, color(i, :));
         
         subplot(nRows, nRefs + 1, rIdx(i) + 1);
-        patchlib.drawPatchRect(refGrids{rIdx(i)}(pIdx(i), :), patchSize, color(i, :));
+        patchview.drawPatchRect(refGrids{rIdx(i)}(pIdx(i), :), patchSize, color(i, :));
     end
 
 end

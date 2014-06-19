@@ -36,7 +36,7 @@ function patchMatches2D(origPatch, varargin)
     nMatches = size(matchgroups{1}, 1);
     
     % create the main figure
-    patchlib.figview();
+    patchview.figure();
     
     % compute the number of rows and columns in the plot
     nRows = nPatches * nMatchGroups;

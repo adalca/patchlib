@@ -32,7 +32,7 @@ function layers2D(layers, mode, varargin)
             
             % display the layers using the first NN
             v = reshape(layers, [nLayers, prod(volSize)]);
-            [~, nElems] = patchlib.view.patches2D(v, volSize, [], 'subplot');
+            [~, nElems] = patchview.patches2D(v, volSize, [], 'subplot');
             
             % add grids to all the plots
             if numel(varargin) > 0
@@ -52,7 +52,7 @@ function layers2D(layers, mode, varargin)
                 alph = varargin{1};
             end
             if numel(varargin) < 2
-                patchlib.figview(); 
+                patchview.figure(); 
             end
                 
             

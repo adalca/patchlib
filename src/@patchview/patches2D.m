@@ -48,7 +48,7 @@ function varargout = patches2D(patches, patchSize, caxisrange, gridtype)
     nElems = ceil(sqrt(nPatches));
     
     % show patches in subplots.
-    h = patchlib.figview(); hold on;
+    h = patchview.figure(); hold on;
     if strcmp(gridtype, 'subplot')
         for i = 1:nPatches
             subplot(nElems, nElems, i);
