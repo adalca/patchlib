@@ -1,0 +1,3 @@
+[submodule "ext/mgt"]
+	path = ext/mgt
+	url = https://github.com/adalca/mgt.git
