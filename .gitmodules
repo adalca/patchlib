@@ -1,3 +1,6 @@
 [submodule "ext/mgt"]
 	path = ext/mgt
 	url = https://github.com/adalca/mgt.git
+[submodule "ext/mivt"]
+	path = ext/mivt
+	url = https://github.com/adalca/mivt.git
