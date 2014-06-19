@@ -10,6 +10,9 @@ classdef patchview < handle
     %   requires several functions from mgt (https://github.com/adalca/mgt)
     
     properties (Constant)
+        
+      
+        figure = ifelse(exist('figuresc', 'file') == 2, @figuresc, @figure);
     end
     
     methods (Static)

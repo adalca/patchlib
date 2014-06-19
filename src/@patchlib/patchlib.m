@@ -22,8 +22,7 @@ classdef patchlib < handle
     
     properties (Constant)
         default2DpatchSize = [5, 5];
-      
-        figview = ifelse(exist('figuresc', 'file') == 2, @figuresc, @figure);
+
     end
     
     methods (Static)
