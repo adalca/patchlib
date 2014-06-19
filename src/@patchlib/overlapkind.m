@@ -10,7 +10,7 @@ function overlap = overlapkind(str, patchSize)
 %       correpondances above. If the overlap amount doesn't fit one of the corresponding counts,
 %       kind is 'unknown';
 %
-% See Also: patchcount, grid
+% See Also: gridsize, grid
 %
 % Contact: adalca@csail.mit.edu
 

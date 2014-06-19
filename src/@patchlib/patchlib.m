@@ -72,7 +72,7 @@ classdef patchlib < handle
         dst = l2overlapdst(patches1, patches2, df21, patchSize, patchOverlap, nFeatures);
         patchSize = guessPatchSize(n, dim);
         patches = lib2patches(lib, pIdx, varargin)
-        [gridSize, newVolSize] = patchcount(volSize, patchSize, patchOverlap, varargin)
+        [gridSize, newVolSize] = gridsize(volSize, patchSize, patchOverlap, varargin)
         s = patchCenterDist(patchSize);
         overlap = overlapkind(str, patchSize);
         volSize = grid2volSize(gridSize, patchSize, varargin);

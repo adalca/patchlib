@@ -1,4 +1,4 @@
-function [idx, newVolSize, nPatches, overlap] = grid(volSize, patchSize, varargin)
+function [idx, newVolSize, gridsize, overlap] = grid(volSize, patchSize, varargin)
 % GRID grid of patch starting points for n-d volume
 %     idx = grid(volSize, patchSize) computed the grid of patches that fit into volSize given a 
 %     particular patchSize, and return the indexes of the top-left voxel of each patch. patchSize
@@ -35,7 +35,7 @@ function [idx, newVolSize, nPatches, overlap] = grid(volSize, patchSize, varargi
 % 
 %     TODO: could speed up for the special case of 2D or 3D?
 %
-% See also: overlapkind, patchcount
+% See also: overlapkind, gridsize
 %
 % Contact: {adalca,klbouman}@csail.mit.edu
 
@@ -43,7 +43,7 @@ function [idx, newVolSize, nPatches, overlap] = grid(volSize, patchSize, varargi
 
     % check inputs
     [overlap, startDel, returnsub] = parseinputs(volSize, patchSize, varargin{:});
-    [nPatches, newVolSize] = patchlib.patchcount(volSize, patchSize, overlap, startDel);
+    [gridsize, newVolSize] = patchlib.gridsize(volSize, patchSize, overlap, startDel);
     nDims = numel(patchSize);
 
     % compute grid idx
