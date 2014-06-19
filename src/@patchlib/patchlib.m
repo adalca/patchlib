@@ -22,19 +22,7 @@ classdef patchlib < handle
     
     properties (Constant)
         default2DpatchSize = [5, 5];
-        
-        % group view functions
-        view = struct('patchesInImage', @patchlib.viewPatchesInImage, ...
-            'patchMatches2D', @patchlib.viewPatchMatches2D, ...
-            'patches2D', @patchlib.viewPatches2D, ...
-            'layers2D', @patchlib.viewLayers2D);
-        
-        % group test functions
-        test = struct('viewPatchesInImage', @patchlib.testViewPatchesInImage, ...
-            'viewPatchMatches2D', @patchlib.testViewPatchMatches2D, ...
-            'grid', @patchlib.testGrid, ...
-            'viewStackPatches', @patchlib.testStackPatches);
-
+      
         figview = ifelse(exist('figuresc', 'file') == 2, @figuresc, @figure);
     end
     
@@ -45,22 +33,6 @@ classdef patchlib < handle
         
         % quilting
         vol = quilt(patches, gridSize, varargin);
-        
-        % viewers
-        varargout = viewPatchesInImage(im, patchSize, patchLoc, varargin)
-        viewPatchMatches2D(origPatch, varargin);
-        varargout = viewPatches2D(patches, patchSize, caxisrange, gridtype);
-        viewLayers2D(layers, mode, varargin);
-        viewPatchRef2D(vol, refs, vIdx, pIdx, rIdx, varargin);
-        
-        % testers
-        testViewPatchesInImage(tid);
-        testViewPatchMatches2D();
-        testGrid();
-        testStackPatches(varargin);
-        testViewPatchRef2D(varargin);
-        testPatchmrf(varargin);
-        testQuilt(varargin);
         
         % main tools
         [idx, newVolSize, gridSize, overlap] = grid(volSize, patchSize, patchOverlap, varargin);
