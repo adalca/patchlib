@@ -1,0 +1,25 @@
+classdef patchview < handle
+    % PATCHVIEW A visualization library for patchlib
+    %   Currently still in development. 
+    %
+    %   Throughout the documentation, we'll use the same conventions as in patchlib
+    %
+    %   - viewKNNSearch, using functions from viewPatchesInImage
+    %   - view kNN patches (maybe with image?) with scores on top.
+    %
+    %   requires several functions from mgt (https://github.com/adalca/mgt)
+    
+    properties (Constant)
+    end
+    
+    methods (Static)
+       
+        % viewers
+        varargout = patchesInImage(im, patchSize, patchLoc, varargin)
+        patchMatches2D(origPatch, varargin);
+        varargout = patches2D(patches, patchSize, caxisrange, gridtype);
+        layers2D(layers, mode, varargin);
+        patchRef2D(vol, refs, vIdx, pIdx, rIdx, varargin);
+    end
+    
+end
