@@ -26,12 +26,10 @@ function example_quilt(varargin)
         [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 10);
         [~, ~, gridSize] = patchlib.grid(size(im), patchSize);
         
-        vol = patchlib.quilt(patches, gridSize, 'sliding', ...
-            'nnAggregator', @(x) nanmean(x,3), 'voteAggregator', @nanmean);
+        vol = patchlib.quilt(patches, gridSize, 'sliding');
         
         weights = exp(-pDst);
-        volw = patchlib.quilt(patches, gridSize, 'sliding', ...
-            'nnWeights', weights, 'nnAggregator', @(x,y) nanwmean(x,y,3), 'voteAggregator', @nanmean);
+        volw = patchlib.quilt(patches, gridSize, 'sliding', 'nnWeights', weights);
         
         subplot(4, 3, 4);
         imshow(vol, 'InitialMagnification', 'fit');
@@ -89,12 +87,10 @@ function example_quilt(varargin)
         [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
         [~, ~, gridSize] = patchlib.grid(size(im), patchSize, 'mrf');
         
-        vol = patchlib.quilt(patches, gridSize, 'mrf', ...
-            'nnAggregator', @(x) nanmean(x,3), 'voteAggregator', @nanmean);
+        vol = patchlib.quilt(patches, gridSize, 'mrf');
         
         weights = exp(-pDst);
-        volw = patchlib.quilt(patches, gridSize, 'mrf', ...
-            'nnWeights', weights, 'nnAggregator', @(x,y) nanwmean(x,y,3), 'voteAggregator', @nanmean);
+        volw = patchlib.quilt(patches, gridSize, 'mrf', 'nnWeights', weights);
         
         subplot(4, 3, 10);
         imshow(vol, 'InitialMagnification', 'fit');
