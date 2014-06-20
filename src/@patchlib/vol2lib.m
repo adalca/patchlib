@@ -18,10 +18,10 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %
 %   Note: vol2lib will cut the volume to fit the right number of patches.
 %
-%   [library, idx, libVolSize, nPatches] = vol2lib(...) returns the index of the starting (top-left)
+%   [library, idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
 %       point of every patch in the *original* volume, and the size of the volumes size, which is
 %       smaller than or equal to the size of vol. It will be smaller than the initial volume if the
-%       volume had to be cropped. Also returns the number of patches nPatches.
+%       volume had to be cropped. Also returns the number of patches gridSize.
 %
 %   [..., libIdx] = vol2lib(...) only given a cell of vols, returns a cell array with each entry
 %       being a column vector with the same number of rows as library, indicating the volume index
@@ -59,7 +59,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     volSize = size(vol);
     
     % get the index and subscript of the initial grid
-    [initidx, cropVolSize, nPatches] = patchlib.grid(volSize, patchSize, varargin{:}); 
+    [initidx, cropVolSize, gridSize] = patchlib.grid(volSize, patchSize, varargin{:}); 
     initsub = cell(1, nDims);
     [initsub{:}] = ind2sub(volSize, initidx);
     vol = cropVolume(vol, cropVolSize);
@@ -101,11 +101,11 @@ function varargout = vol2lib(vol, patchSize, varargin)
     % check final library size
     assert(numel(initidx) == size(library, 1), ...
         'Something went wrong with the library of index computation. Sizes don''t match.');
-    assert(prod(nPatches) == size(library, 1), ...
+    assert(prod(gridSize) == size(library, 1), ...
         'Something went wrong with the library of index computation. Sizes don''t match.');
     
     % outputs
-    outputs = {library, initidx(:), cropVolSize, nPatches};
+    outputs = {library, initidx(:), cropVolSize, gridSize};
     varargout = outputs(1:nargout); 
 end
 
@@ -115,17 +115,17 @@ function varargout = vol2libcell(vol, patchSize, varargin)
     varargout{1} = cell(numel(vol), 1);
     idx = cell(numel(vol), 1);
     sizes = cell(numel(vol), 1);
-    nPatches = cell(numel(vol), 1);
+    gridSize = cell(numel(vol), 1);
     
     % run vol2lib on each patch
     for i = 1:numel(vol)
-        [varargout{1}{i}, idx{i}, sizes{i}, nPatches{i}] = ...
+        [varargout{1}{i}, idx{i}, sizes{i}, gridSize{i}] = ...
             patchlib.vol2lib(vol{i}, patchSize, varargin{:});
     end
     
     if nargout >= 2, varargout{2} = idx; end
     if nargout >= 3, varargout{3} = sizes; end
-    if nargout >= 4, varargout{4} = nPatches; end
+    if nargout >= 4, varargout{4} = gridSize; end
     if nargout == 5,
         idxcell = cell(numel(vol), 1);
         for i = 1:numel(vol),

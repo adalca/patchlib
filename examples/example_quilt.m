@@ -2,6 +2,7 @@ function example_quilt(varargin)
     [testids, im, noisyim, patchSize] = setup(varargin{:});
     m = round(size(im)/2);
     range = {m(1)-20:m(1)+20, m(2)-20:m(2)+20, 1:size(im, 3)};
+    pl = patchlib;
     
     % show the final image 
     patchview.figure(); 
@@ -23,13 +24,11 @@ function example_quilt(varargin)
         
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 10);
-        gridSize = patchlib.gridsize(size(im), patchSize);
-        
-        vol = patchlib.quilt(patches, gridSize, 'sliding');
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(noisyim, im, patchSize, 'K', 10);
+        vol = pl.quilt(patches, gridSize, 'sliding');
         
         weights = exp(-pDst);
-        volw = patchlib.quilt(patches, gridSize, 'sliding', 'nnWeights', weights);
+        volw = pl.quilt(patches, gridSize, 'sliding', 'nnWeights', weights);
         
         subplot(4, 3, 4);
         imshow(vol, 'InitialMagnification', 'fit');
@@ -50,20 +49,19 @@ function example_quilt(varargin)
     if ismember(2, testids)
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-        gridSize = patchlib.gridsize(size(im), patchSize, 'mrf');
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
         
         % TODO: combine the next 3 mini blocks into patchmrf...
-        [qpatches, bel, pot] = patchlib.patchmrf(patches, gridSize, pDst);
+        [qpatches, bel, pot] = pl.patchmrf(patches, gridSize, pDst);
         
         % quilt bland
-        vol = patchlib.quilt(qpatches, gridSize, 'mrf');
+        vol = pl.quilt(qpatches, gridSize, 'mrf');
         
         % quilt with weights
         gaussFilt = fspecial('gaussian', patchSize);
         w1 = repmat(gaussFilt(:)', [size(qpatches, 1), 1]);
         w2 = repmat(max(bel.nodeBel, [], 2), [1, size(w1, 2)]);
-        volw = patchlib.quilt(qpatches, gridSize, 'mrf', 'weights', w1 .* w2);
+        volw = pl.quilt(qpatches, gridSize, 'mrf', 'weights', w1 .* w2);
         
         subplot(4, 3, 7);
         imshow(vol, 'InitialMagnification', 'fit');
@@ -84,13 +82,11 @@ function example_quilt(varargin)
     if ismember(3, testids)
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-        gridSize = patchlib.gridsize(size(im), patchSize, 'mrf');
-        
-        vol = patchlib.quilt(patches, gridSize, 'mrf');
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+        vol = pl.quilt(patches, gridSize, 'mrf');
         
         weights = exp(-pDst);
-        volw = patchlib.quilt(patches, gridSize, 'mrf', 'nnWeights', weights);
+        volw = pl.quilt(patches, gridSize, 'mrf', 'nnWeights', weights);
         
         subplot(4, 3, 10);
         imshow(vol, 'InitialMagnification', 'fit');

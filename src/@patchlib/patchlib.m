@@ -37,7 +37,7 @@ classdef patchlib < handle
         [idx, newVolSize, gridSize, overlap] = grid(volSize, patchSize, patchOverlap, varargin);
         [qpatches, bel, pot] = patchmrf(varargin);
         varargout = stackPatches(patches, patchSize, gridSize, varargin);
-        [patches, pDst, pIdx, pDstIdx] = volknnsearch(src, refs, patchSize, varargin);
+        [patches, pDst, pIdx, pDstIdx, gridSize] = volknnsearch(src, refs, patchSize, varargin);
         
         % mini-tools
         dst = l2overlapdst(patches1, patches2, df21, patchSize, patchOverlap, nFeatures);
