@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Patchlib by adalca</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Patchlib</h1>
+        <h2>MATLAB library for N-D patch work </h2>
+        <a href="https://github.com/adalca/patchlib" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="patchlib" class="anchor" href="#patchlib"><span class="octicon octicon-link"></span></a>patchlib</h1>
+
+<p>A library for working with N-D patches, currently very much in development.
+Please do a recursive pull, as the git has git submodules <a href="https://github.com/adalca/mgt">mgt</a> and <a href="https://github.com/adalca/mivt">mvit</a>.</p>
+
+<p>Please let us know of any questions/suggestions at <a href="mailto:adalca@csail.mit.edu">adalca@csail.mit.edu</a></p>
+
+<h2>
+<a name="main-functions" class="anchor" href="#main-functions"><span class="octicon octicon-link"></span></a>Main Functions</h2>
+
+<ul>
+<li>
+<a href="src/@patchlib/vol2lib.m"><code>patchlib.vol2lib</code></a> transform a N-D volume into a patch library</li>
+<li>
+<a href="src/@patchlib/volStruct2lib.m"><code>patchlib.volStruct2lib</code></a> transform a volStruct into a patch library</li>
+<li>
+<a href="src/@patchlib/grid.m"><code>patchlib.grid</code></a> grid of patch starting points for N-D volume</li>
+<li>
+<a href="src/@patchlib/stackPatches.m"><code>patchlib.stackPatches</code></a> stack patches in layer structure</li>
+<li>
+<a href="src/@patchlib/volknnsearch.m"><code>patchlib.volknnsearch</code></a> k-NN search of patches in source given a set of reference volumes</li>
+<li>
+<a href="src/@patchlib/patchmrf.m"><code>patchlib.patchmrf</code></a> mrf patch inference on patch candidates on a grid</li>
+<li>
+<a href="src/@patchlib/quilt.m"><code>patchlib.quilt</code></a> quilt or reconstruct volume from patch indexes in library</li>
+<li>
+<a href="src/@patchlib/gridsize.m"><code>patchlib.gridsize</code></a> grid of patches that fit into a volume</li>
+</ul><h2>
+<a name="helpers" class="anchor" href="#helpers"><span class="octicon octicon-link"></span></a>Helpers</h2>
+
+<ul>
+<li>
+<a href="src/@patchlib/overlapkind.m"><code>patchlib.overlapkind</code></a> overlap amount to/from pre-specified overlap kind</li>
+<li>
+<a href="src/@patchlib/guessPatchSize.m"><code>patchlib.guessPatchSize</code></a> guess the size of a patch from nVoxels</li>
+<li>
+<a href="src/@patchlib/patchCenterDist.m"><code>patchlib.patchCenterDist</code></a> compute the distance to the center of a patch</li>
+<li>
+<a href="src/@patchlib/gridsize2volSize.m"><code>patchlib.gridsize2volSize</code></a> volume size from number of patches</li>
+<li>
+<a href="src/@patchlib/isvalidoverlap.m"><code>patchlib.isvalidoverlap</code></a> check overlap variable</li>
+<li>
+<a href="src/@patchlib/grid2volSize.m"><code>patchlib.grid2volSize</code></a> olume size from patch grid size</li>
+<li><a href="src/@patchlib/patchesmat2cell.m"><code>patchlib.patchesmat2cell</code></a></li>
+<li><a href="src/@patchlib/l2overlapdst.m"><code>patchlib.l2overlapdst</code></a></li>
+<li>
+<a href="src/@patchlib/lib2patches.m"><code>patchlib.lib2patches</code></a> (still in draft mode)</li>
+</ul><h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<ul>
+<li>
+<a href="examples/example_quilt.m"><code>example_quilt</code></a> test quilting/reconstruction</li>
+<li>
+<a href="examples/example_viewPatchesInImage.m"><code>example_viewPatchesInImage</code></a> test view.patchesInImage</li>
+<li>
+<a href="examples/example_viewPatchMatches2D.m"><code>example_viewPatchMatches2D</code></a> test view.patchMatches2D</li>
+<li>
+<a href="examples/example_viewPatchRef2D.m"><code>example_viewPatchRef2D</code></a> test view.patchRef2D</li>
+<li>
+<a href="examples/example_grid.m"><code>example_grid</code></a> test grid</li>
+<li>
+<a href="examples/example_stackPatches.m"><code>example_stackPatches</code></a> Test stackPatches on simple reconstruction task.</li>
+<li>
+<a href="examples/example_patchmrf.m"><code>example_patchmrf</code></a> Test patchmrf</li>
+</ul><h2>
+<a name="visualization" class="anchor" href="#visualization"><span class="octicon octicon-link"></span></a>Visualization</h2>
+
+<ul>
+<li>
+<a href="src/@patchview/patchesInImage.m"><code>patchview.patchesInImage</code></a> visualize 2D patches in an image</li>
+<li>
+<a href="src/@patchview/patchMatches2D.m"><code>patchview.patchMatches2D</code></a> display 2D patches matching an original patch</li>
+<li>
+<a href="src/@patchview/patches2D.m"><code>patchview.patches2D</code></a> show 2D patches in a subplot grid</li>
+<li>
+<a href="src/@patchview/layers2D.m"><code>patchview.layers2D</code></a> view layers (as returned by patchlib.stackPatches)</li>
+<li><a href="src/@patchview/patchRef2D.m"><code>patchview.patchRef2D</code></a></li>
+<li>
+<a href="src/@patchview/drawPatchRect.m"><code>patchview.drawPatchRect</code></a>  draw rectangles in the current axis</li>
+</ul><h2>
+<a name="under-construction" class="anchor" href="#under-construction"><span class="octicon octicon-link"></span></a>Under Construction</h2>
+
+<p>viewPatchNeighbors3D</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/adalca/patchlib/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/adalca/patchlib/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/adalca/patchlib"></a> is maintained by <a href="https://github.com/adalca">adalca</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
