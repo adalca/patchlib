@@ -3,11 +3,11 @@ function example_patchmrf(varargin)
     
     % perform a knn search for mrf patches in noisyim by using im as reference.
     % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
-    [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-    [~, ~, nPatches] = patchlib.grid(size(im), patchSize, 'mrf');
+    [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+    gridsize = patchlib.gridsize(size(im), patchSize, 'mrf');
     
     if ismember(1, testids)
-        [qpatches, bel, pot] = patchlib.patchmrf(patches, nPatches, pDst);
+        [qpatches, bel, pot] = patchlib.patchmrf(patches, gridsize, pDst);
     end
     
     

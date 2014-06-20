@@ -1,4 +1,4 @@
-function [patches, pIdx, pRefIdxs, pDst] = volknnsearch(src, refs, patchSize, varargin)
+function [patches, pDst, pIdx, pRefIdxs] = volknnsearch(src, refs, patchSize, varargin)
 % VOLKNNSEARCH k-NN search of patches in source given a set of reference volumes
 %   patches = volknnsearch(src, refs, patchSize) k-NN search of patches in source volume src given a 
 %       set of reference volumes refs. refs can be a volume or a cell of volumes, of the same
@@ -16,7 +16,7 @@ function [patches, pIdx, pRefIdxs, pDst] = volknnsearch(src, refs, patchSize, va
 %   patches = volknnsearch(..., Param, Value) allows for parameter/value pairs that are passed down
 %       to knnsearch(...).
 %
-%   [patches, pIdx, pRefIdx, pDst] = volknnsearch(...) also returns  the patch indexes (M x K) into
+%   [patches, pDst, pIdx, pRefIdx] = volknnsearch(...) also returns  the patch indexes (M x K) into
 %       the reference libraries, pRefIdxs (M x 1) indexing the libraries for every patch, and pDst
 %       giving the distance of every patch resulting from knnsearch().
 %

@@ -70,7 +70,7 @@ function [patchOverlap, startDel] = parseinputs(volSize, patchSize, varargin)
     end
     assert(all(patchSize > patchOverlap));
     
-    if nargin == 3 
+    if nargin < 4
         startDel = ones(size(patchSize));
     else
         startDel = varargin{2};

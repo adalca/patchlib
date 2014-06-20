@@ -6,7 +6,7 @@ function example_viewPatchRef2D(varargin)
     
     % perform a knn search for sliding patches in noisyim by using im as reference.
     % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
-    [~, pIdx, rIdx] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 1);
+    [~, ~, pIdx, rIdx] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 1);
     
     
     vIdx = randperm(size(pIdx, 1))';
@@ -26,7 +26,7 @@ function [testids, im, noisyim, patchSize] = setup(varargin)
     testids = ifelse(nargin == 0, '1:4', 'varargin{1}', true);
         
     % get noise standard deviation
-    noisestd = ifelse(nargin < 2, '0.1', 'varargin{2}', true);
+    noisestd = ifelse(nargin < 2, '0.05', 'varargin{2}', true);
     
     % load image. We'll crop around a small pepper.
     imd = im2double(imread('peppers.png'));

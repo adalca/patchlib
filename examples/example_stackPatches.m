@@ -30,10 +30,10 @@ function example_stackPatches(varargin)
     % perform a knn search for sliding patches in noisyim by using im as reference.
     % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
     patches = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 1);
-    [~, ~, nPatches] = patchlib.grid(size(im), patchSize);
+    gridsize = patchlib.gridsize(size(im), patchSize);
     
     % assemble the patches into layers
-    layers = patchlib.stackPatches(patches, patchSize, nPatches);
+    layers = patchlib.stackPatches(patches, patchSize, gridsize);
 
     %%% Test 1
     if ismember(1, testids)

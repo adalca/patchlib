@@ -23,8 +23,8 @@ function example_quilt(varargin)
         
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 10);
-        [~, ~, gridSize] = patchlib.grid(size(im), patchSize);
+        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'K', 10);
+        gridSize = patchlib.gridsize(size(im), patchSize);
         
         vol = patchlib.quilt(patches, gridSize, 'sliding');
         
@@ -50,8 +50,8 @@ function example_quilt(varargin)
     if ismember(2, testids)
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-        [~, ~, gridSize] = patchlib.grid(size(im), patchSize, 'mrf');
+        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+        gridSize = patchlib.gridsize(size(im), patchSize, 'mrf');
         
         % TODO: combine the next 3 mini blocks into patchmrf...
         [qpatches, bel, pot] = patchlib.patchmrf(patches, gridSize, pDst);
@@ -84,8 +84,8 @@ function example_quilt(varargin)
     if ismember(3, testids)
         % perform a knn search for mrf patches in noisyim by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, ~, ~, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-        [~, ~, gridSize] = patchlib.grid(size(im), patchSize, 'mrf');
+        [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+        gridSize = patchlib.gridsize(size(im), patchSize, 'mrf');
         
         vol = patchlib.quilt(patches, gridSize, 'mrf');
         
