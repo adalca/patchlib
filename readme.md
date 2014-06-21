@@ -22,22 +22,12 @@ Helpers
 - [`patchlib.overlapkind`](src/@patchlib/overlapkind.m) overlap amount to/from pre-specified overlap kind
 - [`patchlib.guessPatchSize`](src/@patchlib/guessPatchSize.m) guess the size of a patch from nVoxels
 - [`patchlib.patchCenterDist`](src/@patchlib/patchCenterDist.m) compute the distance to the center of a patch
-- [`patchlib.gridsize2volSize`](src/@patchlib/gridsize2volSize.m) volume size from number of patches
+- [`patchlib.grid2volSize`](src/@patchlib/grid2volSize.m) volume size from number of patches
 - [`patchlib.isvalidoverlap`](src/@patchlib/isvalidoverlap.m) check overlap variable
 - [`patchlib.grid2volSize`](src/@patchlib/grid2volSize.m) olume size from patch grid size
 - [`patchlib.patchesmat2cell`](src/@patchlib/patchesmat2cell.m)
 - [`patchlib.l2overlapdst`](src/@patchlib/l2overlapdst.m)
 - [`patchlib.lib2patches`](src/@patchlib/lib2patches.m) (still in draft mode)
-
-Examples
---------
-- [`example_quilt`](examples/example_quilt.m) test quilting/reconstruction
-- [`example_viewPatchesInImage`](examples/example_viewPatchesInImage.m) test view.patchesInImage
-- [`example_viewPatchMatches2D`](examples/example_viewPatchMatches2D.m) test view.patchMatches2D
-- [`example_viewPatchRef2D`](examples/example_viewPatchRef2D.m) test view.patchRef2D
-- [`example_grid`](examples/example_grid.m) test grid
-- [`example_stackPatches`](examples/example_stackPatches.m) Test stackPatches on simple reconstruction task.
-- [`example_patchmrf`](examples/example_patchmrf.m) Test patchmrf
 
 Visualization
 -------------
@@ -48,6 +38,15 @@ Visualization
 - [`patchview.patchRef2D`](src/@patchview/patchRef2D.m)
 - [`patchview.drawPatchRect`](src/@patchview/drawPatchRect.m)  draw rectangles in the current axis
 
+Examples
+--------
+- [`example_quilt`](examples/example_quilt.m) test quilting/reconstruction
+- [`example_viewPatchesInImage`](examples/example_viewPatchesInImage.m) test view.patchesInImage
+- [`example_viewPatchMatches2D`](examples/example_viewPatchMatches2D.m) test view.patchMatches2D
+- [`example_viewPatchRef2D`](examples/example_viewPatchRef2D.m) test view.patchRef2D
+- [`example_grid`](examples/example_grid.m) test grid
+- [`example_stackPatches`](examples/example_stackPatches.m) Test stackPatches on simple reconstruction task.
+- [`example_patchmrf`](examples/example_patchmrf.m) Test patchmrf
 
 Under Construction
 ------------------
