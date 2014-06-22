@@ -22,6 +22,7 @@ function patches = lib2patches(lib, pIdx, varargin)
         lib = {lib};
         lIdx = ones(size(pIdx));
     end
+    assert(all(size(pIdx) == size(lIdx)) && max(lIdx(:)) <= numel(lib));
 
     % check inputs
     [patchSize, docell] = parseinputs(size(lib{1}, 2), varargin{:});
