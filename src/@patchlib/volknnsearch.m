@@ -16,7 +16,7 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize] = volknnsearch(srcvol, ref
 %     - 'local' (voxel spacing integer): if desired to do local search around each voxel, instead of
 %       global (which is default).
 %       
-%     - 'search': function handle --- allow for a different type of local search, rather than the
+%     - 'searchfn': function handle --- allow for a different type of local search, rather than the
 %       standard local or global search functions. For example, this can be useful if you want to do
 %       a local search in some registration space, where the source location of a voxel corresponds
 %       to a different locationin each source. The function signature is (src, refs, patchSize,
@@ -56,53 +56,6 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize] = volknnsearch(srcvol, ref
     [patches, pDst, pIdx, pRefIdxs] = ...
         inputs.searchfn(src, refs, patchSize, knnvarargin{:});
     srcgridsize = src.gridSize;
-end
-
-
-function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, varargin)
-% getPatchFunction (2dLocation_in_src, ref), 
-% method for extracting the actual stuff - this can probably be put with getPatchFunction. 
-% pre-sel voxels?
-% Other stuff for knnsearch
-    
-    if ~iscell(refs)
-        refs = {refs};
-    end
-    
-    % check for source overlaps
-    srcoverlap = {};
-    if numel(varargin) > 1 && patchlib.isvalidoverlap(varargin{1})
-        srcoverlap = varargin(1);
-        varargin = varargin(2:end);
-    end
-    
-    % check for reference overlaps
-    refoverlap = {};
-    if numel(varargin) > 1 && patchlib.isvalidoverlap(varargin{1})
-        refoverlap = varargin(1);
-        varargin = varargin(2:end);
-    end
-    
-    % 'local' means local search, and takes in spacing or function. 
-    % also allow 'localpreprocess'
-    p = inputParser();
-    p.addParameter('local', [], @isnumeric);
-    p.addParameter('searchfn', [], @(x) isa(x, 'function_handle'));
-    p.addParameter('buildreflibs', true, @islogical);
-    p.KeepUnmatched = true;
-    p.parse(varargin{:});
-    knnvargin = struct2cellWithNames(p.Unmatched);
-    inputs = p.Results;
-    
-    if isempty(inputs.local) && isempty(inputs.searchfn)
-        assert(inputs.buildreflibs)
-        inputs.searchfn = @globalsearch;
-    elseif ~isempty(inputs.local)
-        assert(inputs.buildreflibs);
-        assert(isnumeric(inputs.local));
-        assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
-        inputs.searchfn = @(x, y, z, varargin) localsearch(x, y, z, inputs.local, varargin{:});
-    end
 end
 
 
@@ -187,4 +140,54 @@ function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, va
     % return patches
     patches = patchlib.lib2patches({refslib}, pIdx, pRefIdxs, patchSize);
 end
+
+
+
+function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, varargin)
+% getPatchFunction (2dLocation_in_src, ref), 
+% method for extracting the actual stuff - this can probably be put with getPatchFunction. 
+% pre-sel voxels?
+% Other stuff for knnsearch
+    
+    if ~iscell(refs)
+        refs = {refs};
+    end
+    
+    % check for source overlaps
+    srcoverlap = {};
+    if numel(varargin) > 1 && patchlib.isvalidoverlap(varargin{1})
+        srcoverlap = varargin(1);
+        varargin = varargin(2:end);
+    end
+    
+    % check for reference overlaps
+    refoverlap = {};
+    if numel(varargin) > 1 && patchlib.isvalidoverlap(varargin{1})
+        refoverlap = varargin(1);
+        varargin = varargin(2:end);
+    end
+    
+    % 'local' means local search, and takes in spacing or function. 
+    % also allow 'localpreprocess'
+    p = inputParser();
+    p.addParameter('local', [], @isnumeric);
+    p.addParameter('searchfn', [], @(x) isa(x, 'function_handle'));
+    p.addParameter('buildreflibs', true, @islogical);
+    p.KeepUnmatched = true;
+    p.parse(varargin{:});
+    knnvargin = struct2cellWithNames(p.Unmatched);
+    inputs = p.Results;
+    
+    if isempty(inputs.local) && isempty(inputs.searchfn)
+        assert(inputs.buildreflibs)
+        inputs.searchfn = @globalsearch;
+    elseif ~isempty(inputs.local)
+        assert(inputs.buildreflibs);
+        assert(isnumeric(inputs.local));
+        assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
+        inputs.searchfn = @(x, y, z, varargin) localsearch(x, y, z, inputs.local, varargin{:});
+    end
+end
+
+
 
