@@ -102,14 +102,14 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
         refIdx = cell(nRefs, 1);
         for r = 1:nRefs
             idxsel = bsxfun(@ge, refs.subs{r}, sub1(i, :)) & bsxfun(@le, refs.subs{r}, sub2{r}(i, :));
-            gidx{i} = ridx{r}(all(idxsel, 2));
-            gidx{i} = gidx{i}(:);    
+            gidx{r} = ridx{r}(all(idxsel, 2));
+            gidx{r} = gidx{r}(:);    
             
-            ipatches{i} = refs.lib{r}(gidx{i}, :);
-            refIdx{i} = r * ones(size(gidx{i}));
+            ipatches{r} = refs.lib{r}(gidx{r}, :);
+            refIdx{r} = r * ones(size(gidx{r}));
             
         end
-        gidxsall = cat(1, gidx{:});
+        gidxsall = cat(1, gidx{:});        
         ipatchesall = cat(1, ipatches{:});
         riall = cat(1, refIdx{:});
         assert(size(gidxsall, 1) >= K, 'Spacing does not allow %d nearest neighbours', K);
@@ -188,6 +188,3 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
         inputs.searchfn = @(x, y, z, varargin) localsearch(x, y, z, inputs.local, varargin{:});
     end
 end
-
-
-
