@@ -4,11 +4,11 @@ patchlib
 A library for working with N-D patches, currently very much in development.
 Please do a recursive pull, as the git has git submodules [mgt](https://github.com/adalca/mgt) and [mvit](https://github.com/adalca/mivt).
 
-## Contributors
-Adrian Dalca
-Katie Bouman
+### Contributors
+[Adrian Dalca](http://adalca.mit.edu)  
+[Katie Bouman](http://people.csail.mit.edu/klbouman)
 
-## Contact
+### Contact
 Please let us know of any questions/suggestions: {adalca,klbouman}@csail.mit.edu
 
 Main Functions
