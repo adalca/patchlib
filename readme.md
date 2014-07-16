@@ -52,9 +52,10 @@ Under Construction
 viewPatchNeighbors3D
 
 
-### Contributors
+Contributors
+------------
 [Adrian Dalca](http://adalca.mit.edu)  
 [Katie Bouman](http://people.csail.mit.edu/klbouman)
 
-### Contact
+##### Contact
 Please let us know of any questions/suggestions: {adalca,klbouman}@csail.mit.edu
