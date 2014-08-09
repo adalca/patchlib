@@ -13,3 +13,8 @@ Katie Bouman
 
 ## Contact
 Please let us know of any questions/suggestions: {adalca,klbouman}@csail.mit.edu
+Contributors
+------------
+Adrian Dalca ([web](http://adalca.mit.edu) | [email](mailto:adalca@mit.edu))  
+Katie Bouman ([web](http://people.csail.mit.edu/klbouman) | [email](mailto:klbouman@csail.mit.edu))
+
