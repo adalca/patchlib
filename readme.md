@@ -4,8 +4,8 @@ patchlib
 A library for working with N-D patches, currently very much in development.
 Please do a recursive pull, as the git has git submodules [mgt](https://github.com/adalca/mgt) and [mvit](https://github.com/adalca/mivt).
 
-- See [`functions`](src/functions.m) for a list of functions in this library.
-- See [`examples`](examples/examples.m) for a list of examples to get you started.
+- See [`functions`](src/functions.md) for a list of functions in this library.
+- See [`examples`](examples/examples.md) for a list of examples to get you started.
 
 Contributors
 ------------
