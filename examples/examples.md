@@ -1,8 +1,6 @@
 patchlib examples
 =================
 
-Examples
---------
 - [`example_quilt`](example_quilt.m) test quilting/reconstruction
 - [`example_viewPatchesInImage`](example_viewPatchesInImage.m) test view.patchesInImage
 - [`example_viewPatchMatches2D`](example_viewPatchMatches2D.m) test view.patchMatches2D
