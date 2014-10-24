@@ -1,44 +1,29 @@
 function vol = quilt(patches, gridSize, varargin)
 % QUILT quilt or reconstruct volume from patch indexes in library
 %
-% DOCS BELOW ARE NOT PERFECT 
-%   vol = quilt(patches, nPatches) quilt or reconstruct volume from patch indexes patchIdx in library. 
-%   vol = quilt(patches, nPatches, patchSize) 
-%   vol = quilt(patches, nPatches, patchSize, patchOverlap) 
+%   vol = quilt(patches, gridSize) quilt or reconstruct volume from patches given a grid size. the
+%       patch size is guessed based on the given patches 
 %
-%   Inputs (assuming nDims = dimensions of the patch/targetvolume and nVoxels = prod(patchSize)):
-%       patchSize is a [1 x nDims] vec giving the size of the patch. 
-%       library is the library of patches, [M x nVoxels]
-%       patchIdx is the indexes into library for K patch candidates for N (potentially overlapping) 
-%           patch locations in the target volume [N x K]
-%       patchOverlap is the amount of overlap between patches, as a scalar, [1 x nDims] vector, 
+%   vol = quilt(patches, gridSize, patchSize) allows specification of patchSize
+%
+%   vol = quilt(patches, gridSize, patchSize, patchOverlap) allows specification of patchOverlap
+%
+%       Inputs (assume nDims = dimensions of the patch/targetvolume and nVoxels = prod(patchSize)):
+%       - patches is the library of patches, [M x nVoxels]
+%       - gridSize is a [1 x nDims] vector indicating the number of patches in each dimension. We 
+%           must have prod(gridSize) == N;
+%       - patchSize is a [1 x nDims] vec giving the size of the patch. 
+%       - patchOverlap is the amount of overlap between patches, as a scalar, [1 x nDims] vector, 
 %           or string. See patchlib.overlapking for the type of strings supported.
-%       nPatches is a [1 x nDims] vector indicating the number of patches in each dimension. We must
-%           have prod(nPatches) == N;
 %    
 %   vol = quilt(..., Param, Value, ...) allows for the following Parameters:
-%       'voteAggregator': a function handle to aggregate votes for each voxel. The function should
-%       take a 
+%       'voteAggregator': a function handle to aggregate votes for each voxel. 
+%       'weights':  weights for voteAggregator. will normalize to add to 1 accross layers
+%       'nWeights': weights already normalized in a specific way
+%       'nnAggregator': a function handle to aggregate nn patches.  
+%       'nnWeights': weights when doing the nearest neighbor aggregations
 %
-% Note: Separate patchlib.quilt from patchlib.mrfsolve(orwhatever). Basically patchlib.quilt should
-% be independent of how the inference was done. It should just have patch candidates, and maybe
-% weights (pre-computed).
-%
-%   targetSize(i.e. nPatches vector) or targetGrid,
-%
-%   optionals-ish: nnWeight (default: 1), patchSize (default: guess), aggFunction (default: wmean)
-%
-%   use inputParser, with patchSize and aggFunction as optional, and 'weights', nnWeights as
-%      param/value
-
-
-% CHANGE TO 
-%   vol = quilt(library, nnIdx, patchSize, nPatches, overlap, 'aggregator', af, 'weights', weights)
-%   vol = quilt(library, nnIdx, patchSize, targetSize, 'aggregator', af, 'weights', weights)
-
-% option to take in patches directly?
-
-% TODO: some defaults for aggregators.
+% Author: adalca@mit
 
     [patches, gridSize, patchSize, patchOverlap, inputs] = ...
         parseinputs(patches, gridSize, varargin{:});
@@ -100,7 +85,7 @@ function [patches, gridSize, patchSize, patchOverlap, inputs] = ...
 
     narginchk(2, inf);
     
-    if numel(varargin) > 1 && isnumeric(varargin{1})
+    if numel(varargin) >= 1 && isnumeric(varargin{1})
         patchSize = varargin{1};
         varargin = varargin(2:end);
     else
