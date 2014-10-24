@@ -1,4 +1,5 @@
-function [patches, pDst, pIdx, pRefIdxs, srcgridsize] = volknnsearch(srcvol, refvols, patchSize, varargin)
+function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
+        volknnsearch(srcvol, refvols, patchSize, varargin)
 % VOLKNNSEARCH k-NN search of patches in source given a set of reference volumes
 %     patches = volknnsearch(src, refs, patchSize) k-NN search of patches in source volume src given
 %     a set of reference volumes refs. refs can be a volume or a cell of volumes, of the same
@@ -30,10 +31,11 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize] = volknnsearch(srcvol, ref
 %   
 %     - any Param/Value argument for knnsearch.
 %
-%     [patches, pDst, pIdx, pRefIdx, srcgridsize] = volknnsearch(...) also returns  the patch
-%     indexes (M x K) into the reference libraries, pRefIdxs (M x 1) indexing the libraries for
-%     every patch, and pDst giving the distance of every patch resulting from knnsearch().
-%     srcgridsize is the source grid size.
+%     [patches, pDst, pIdx, pRefIdx, srcgridsize, refgridsize] = volknnsearch(...) also returns  the
+%     patch indexes (M x K) into the reference libraries (i.e. matching refgridsize, *not* the
+%     entire reference volume(s)), pRefIdxs (Mx1) indexing the libraries for every patch, and pDst
+%     giving the distance of every patch resulting from knnsearch(). srcgridsize is the source grid
+%     size. refgridsize is the grid size of each ref (a cell if refs was cell, a vector otherwise.
 %
 % Contact: adalca@csail.mit.edu
 
@@ -56,6 +58,13 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize] = volknnsearch(srcvol, ref
     [patches, pDst, pIdx, pRefIdxs] = ...
         inputs.searchfn(src, refs, patchSize, knnvarargin{:});
     srcgridsize = src.gridSize;
+    
+    if iscell(refvols)
+        refgridsize = refs.gridSize;
+    else
+        refgridsize = refs.gridSize{1};
+    end
+    
 end
 
 
@@ -80,10 +89,10 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
     
     % get subscript ranges for each voxel. Pre-computation should save time inside the main for loop
     sub = ind2subvec(size(src.vol), src.grididx(:));
-    sub1 = max(sub - spacing, 1);
+    sub1 = max(bsxfun(@minus, sub, spacing), 1);
     sub2 = cell(nRefs, 1);
     for r = 1:numel(refs.lib)
-        sub2{r} = bsxfun(@min, sub + spacing, refs.gridSize{r});
+        sub2{r} = bsxfun(@min, bsxfun(@plus, sub, spacing), refs.gridSize{r});
     end
     
     % get K
@@ -137,8 +146,14 @@ function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, va
     [pIdx, pDst] = knnsearch(refslib, src.lib, varargin{:});
     pRefIdxs = refsidx(pIdx);
     
+    % fix pIdx for return
+    sizes = cellfun(@(x) size(x, 1), refs.lib);
+    for i = 1:numel(refs.lib)
+        pIdx(pRefIdxs == i) = pIdx(pRefIdxs == i) - sum(sizes(1:i-1));
+    end
+    
     % return patches
-    patches = patchlib.lib2patches({refslib}, pIdx, pRefIdxs, patchSize);
+    patches = patchlib.lib2patches(refs.lib, pIdx, pRefIdxs, patchSize);
 end
 
 
