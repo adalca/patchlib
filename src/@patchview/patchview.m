@@ -24,6 +24,8 @@ classdef patchview < handle
         layers2D(layers, mode, varargin);
         patchRef2D(vol, refs, vIdx, pIdx, rIdx, varargin);
         rect = drawPatchRect(patchloc, patchSize, color);
+        grid2D(gridIdx, vol);
+        colmap = corresp2D(pIdx, refgridsize, srcgridsize, varargin)
     end
     
 end
