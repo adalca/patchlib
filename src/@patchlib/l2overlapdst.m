@@ -58,5 +58,3 @@ function idx = patchCropIdx(patchSize, range, nFeatures)
 %     patchIdxShape = reshape(1:prod(patchSize), patchSize); 
 %     idx = patchIdxShape(rangeCropCur{:});
 end
-    
-    
