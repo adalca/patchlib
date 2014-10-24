@@ -14,4 +14,9 @@ Examples of visualiation functions
 ----------------------------------
 - [`example_viewPatchesInImage`](example_viewPatchesInImage.m) test view.patchesInImage
 - [`example_viewPatchMatches2D`](example_viewPatchMatches2D.m) test view.patchMatches2D
-- [`example_viewPatchRef2D`](example_viewPatchRef2D.m) test view.patchRef2D
+- [`example_viewCorresp2D`](example_viewCorresp2D.m) test view.corresp2D
+- [`example_grid2D`](example_grid2D.m) test view.grid2D
+- [`example_viewPatchRef2D`](example_viewPatchRef2D.m) test view.patchRef2D 
+
+TODO:
+- need ro reconcile patchRef2D with corresp2D. 
