@@ -19,6 +19,8 @@ Visualization
 - [`patchview.patches2D`](@patchview/patches2D.m) show 2D patches in a subplot grid
 - [`patchview.layers2D`](@patchview/layers2D.m) view layers (as returned by patchlib.stackPatches)
 - [`patchview.patchRef2D`](@patchview/patchRef2D.m)
+- [`patchview.grid2D`](@patchview/grid2D.m) visualize the patch grid on top of a volume.
+- [`patchview.corresp2D`](@patchview/corresp2D.m) visualize correspondances in 2D
 - [`patchview.drawPatchRect`](@patchview/drawPatchRect.m)  draw rectangles in the current axis
 
 Helpers
