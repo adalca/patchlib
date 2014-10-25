@@ -22,6 +22,9 @@ Visualization
 - [`patchview.grid2D`](@patchview/grid2D.m) visualize the patch grid on top of a volume.
 - [`patchview.corresp2D`](@patchview/corresp2D.m) visualize correspondances in 2D
 - [`patchview.drawPatchRect`](@patchview/drawPatchRect.m)  draw rectangles in the current axis
+- [`patchview.patch3D`](@patchview/patch3D.m) visualize a 3D patch
+
+
 
 Helpers
 -------
@@ -30,10 +33,13 @@ Helpers
 - [`patchlib.patchCenterDist`](@patchlib/patchCenterDist.m) compute the distance to the center of a patch
 - [`patchlib.grid2volSize`](@patchlib/grid2volSize.m) volume size from number of patches
 - [`patchlib.isvalidoverlap`](@patchlib/isvalidoverlap.m) check overlap variable
-- [`patchlib.grid2volSize`](@patchlib/grid2volSize.m) olume size from patch grid size
+- [`patchlib.grid2volSize`](@patchlib/grid2volSize.m) volume size from patch grid size
+- [`patchlib.corresp2disp`](@patchlib/corresp2disp.m) transform locations to displacement.
 - [`patchlib.patchesmat2cell`](@patchlib/patchesmat2cell.m)
 - [`patchlib.l2overlapdst`](@patchlib/l2overlapdst.m)
 - [`patchlib.lib2patches`](@patchlib/lib2patches.m) (still in draft mode)
+
+corresp2disp
 
 Under Construction
 ------------------
