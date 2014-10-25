@@ -50,6 +50,7 @@ classdef patchlib < handle
         [patchesCell, patchSize] = patchesmat2cell(patches, patchSize);
         rect = drawPatchRect(patchloc, patchSize, color);
         isv = isvalidoverlap(overlap);
+        sub = corresp2disp(siz, varargin)
     end
     
 end
