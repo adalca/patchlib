@@ -1,15 +1,44 @@
 function example_patchmrf(varargin)
+% TODO: do some more serious example where you learn from a second image
+%   especially medical images where can use location
+
     [testids, im, noisyim, patchSize] = setup(varargin{:});
     
-    % perform a knn search for mrf patches in noisyim by using im as reference.
-    % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
-    [patches, pDst] = patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
-    gridsize = patchlib.gridsize(size(im), patchSize, 'mrf');
-    
     if ismember(1, testids)
-        [qpatches, bel, pot] = patchlib.patchmrf(patches, gridsize, pDst);
+        % perform a knn search for mrf patches in noisyim by using im as reference.
+        % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
+        [patches, pDst, ~, ~, gridsize] = ...
+            patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+        qpatches = patchlib.patchmrf(patches, gridsize, pDst);
+        resimg = patchlib.quilt(qpatches(:,:,1), gridsize);
     end
     
+    if ismember(2, testids)
+        % search for patches with a location difference weight as well
+        [patches, pDst, pIdx, ~, srcgridsize, refgridsize] = ...
+            patchlib.volknnsearch(noisyim, im, patchSize , 'K', 10, 'location', 0.01);
+        
+        % quilt an image using the top patch
+        resimg1 = patchlib.quilt(patches(:,:,1), srcgridsize, patchSize); 
+        
+        % run an mrf on
+        edgefn = @(a1,a2,a3,a4) patchlib.correspdst(a1, a2, a3, a4, [], true); 
+        [qp, ~, ~, pi] = ...
+            patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , 'edgeDst', edgefn, ...
+            'lambda_node', 0.1, 'lambda_edge', 10, 'pIdx', pIdx, 'refgridsize', refgridsize);
+        
+        disp = patchlib.corresp2disp(srcgridsize, refgridsize, pi);
+        resimg2 = patchlib.quilt(qp, srcgridsize, patchSize); 
+        
+        patchview.figure();
+        subplot(2, 3, 1); imagesc(noisyim);
+        subplot(2, 3, 2); imagesc(im);
+        subplot(2, 3, 3); imagesc(resimg1);
+        subplot(2, 3, 4); imagesc(resimg2);
+        subplot(2, 3, 5); imagesc(reshape(disp{1}, srcgridsize)); 
+        subplot(2, 3, 6); imagesc(reshape(disp{2}, srcgridsize)); 
+        
+    end
     
 end
 
@@ -24,9 +53,11 @@ function [testids, im, noisyim, patchSize] = setup(varargin)
     
     % load image. We'll crop around a small pepper.
     imd = im2double(imread('peppers.png'));
-    im = rgb2gray(imresize(imd(220:320, 100:200, :), [25, 25]));
-    patchSize = [5, 5];
+    im = imresize(imd(220:320, 100:200, :), [25, 25]); 
+    patchSize = [5, 5, 3];
     
     % simulate a noisy image
     noisyim = normrnd(im, noisestd); 
+    noisyim = within([0, 1], noisyim);
+    im = within([0, 1], im);
 end
