@@ -41,7 +41,7 @@ classdef patchlib < handle
         
         % mini-tools
         dst = l2overlapdst(pstr1, pstr2, patchSize, patchOverlap, nFeatures);
-        dst = correspdst(pstr1, pstr2, ~, ~, dvFact);
+        dst = correspdst(pstr1, pstr2, ~, ~, dvFact, usemex);
         patchSize = guessPatchSize(n, dim);
         patches = lib2patches(lib, pIdx, varargin)
         [gridSize, newVolSize] = gridsize(volSize, patchSize, patchOverlap, varargin)
