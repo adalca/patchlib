@@ -54,6 +54,11 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
             patchlib.vol2lib(refs.vols, patchSize, refoverlap{:});
     end
     
+    if inputs.location
+        % TODO: add nDim location support.
+        [src, refs] = addlocation(src, refs, inputs.location);
+    end
+    
     % compute
     [patches, pDst, pIdx, pRefIdxs] = ...
         inputs.searchfn(src, refs, patchSize, knnvarargin{:});
@@ -75,30 +80,25 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
 
     nRefs = numel(refs.vols);
     
-    % get subscript instead of linear index in refs:
-    for i = 1:nRefs
-        refs.subs{i} = ind2subvec(size(refs.vols{i}), refs.grididx{i}(:));
-    end
+    % get subscripts refs.subs that match the linear index in refs
+    fn = @(x, y) ind2subvec(size(x), y(:));
+    refs.subs = cellfun(fn, refs.vols, refs.grididx, 'UniformOutput', false);
 
-    % get the linear indexes in the grididx
-    ridx = cell(nRefs, 1);    
-    for i = 1:nRefs
-        ridx{i} = ind2ind(size(refs.vols{i}), refs.gridSize{i}, refs.grididx{i});
-        ridx{i} = reshape(ridx{i}, refs.gridSize{i});
-    end
+    % get the linear indexes grididx from full volume space to gridSize
+    fn = @(x, y, z) reshape(ind2ind(size(x), y, z), y);
+    ridx = cellfun(fn, refs.vols, refs.gridSize, refs.grididx, 'UniformOutput', false);
     
-    % get subscript ranges for each voxel. Pre-computation should save time inside the main for loop
-    sub = ind2subvec(size(src.vol), src.grididx(:));
-    sub1 = max(bsxfun(@minus, sub, spacing), 1);
-    sub2 = cell(nRefs, 1);
-    for r = 1:numel(refs.lib)
-        sub2{r} = bsxfun(@min, bsxfun(@plus, sub, spacing), refs.gridSize{r});
-    end
+    % get subscript local ranges for each voxel. 
+    % Pre-computation should save time inside the main for-loop
+    srcgridsub = ind2subvec(size(src.vol), src.grididx(:));
+    mingridsub = max(bsxfun(@minus, srcgridsub, spacing), 1);
+    fn = @(x) bsxfun(@min, bsxfun(@plus, srcgridsub, spacing), x);
+    maxgridsub = cellfun(fn, refs.gridSize, 'UniformOutput', false);
     
-    % get K
+    % get input K
     f = find(strcmp('K', varargin), 1, 'first');
     K = ifelse(isempty(f), '1', 'varargin{f + 1}', true);
-    
+        
     % go through each voxel, get reference patches from nearby from each reference.
     pIdx = zeros(size(src.lib, 1), K);
     pRefIdxs = zeros(size(src.lib, 1), K);
@@ -106,31 +106,33 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
     for i = 1:size(src.lib, 1)
         
         % compute the reference linear idx and reference number for the regions around this voxel
-        gidx = cell(nRefs, 1);
+        ridxwindow = cell(nRefs, 1);
         ipatches = cell(nRefs, 1);
         refIdx = cell(nRefs, 1);
         for r = 1:nRefs
-            idxsel = bsxfun(@ge, refs.subs{r}, sub1(i, :)) & bsxfun(@le, refs.subs{r}, sub2{r}(i, :));
-            gidx{r} = ridx{r}(all(idxsel, 2));
-            gidx{r} = gidx{r}(:);    
+            idxsel = bsxfun(@ge, refs.subs{r}, mingridsub(i, :)) & ...
+                bsxfun(@le, refs.subs{r}, maxgridsub{r}(i, :));
+            ridxwindow{r} = ridx{r}(all(idxsel, 2));
+            ridxwindow{r} = ridxwindow{r}(:);    
             
-            ipatches{r} = refs.lib{r}(gidx{r}, :);
-            refIdx{r} = r * ones(size(gidx{r}));
-            
+            ipatches{r} = refs.lib{r}(ridxwindow{r}, :);
+            refIdx{r} = r * ones(size(ridxwindow{r}));
         end
-        gidxsall = cat(1, gidx{:});        
+        gidxsall = cat(1, ridxwindow{:});        
         ipatchesall = cat(1, ipatches{:});
         riall = cat(1, refIdx{:});
         assert(size(gidxsall, 1) >= K, 'Spacing does not allow %d nearest neighbours', K);
         
         [p, d] = knnsearch(ipatchesall, src.lib(i, :), varargin{:});
+        
         pIdx(i, :) = gidxsall(p);
         pDst(i, :) = d; 
         pRefIdxs(i, :) = riall(p);
     end
 
     % extract the patches
-    patches = patchlib.lib2patches(refs.lib, pIdx, pRefIdxs, patchSize);
+    refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
+    patches = patchlib.lib2patches(refslibs, pIdx, pRefIdxs, patchSize);
 end
 
 
@@ -141,7 +143,7 @@ function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, va
     % compute one ref library, and associated indexes
     refslib = cat(1, refs.lib{:});
     refsidx = cat(1, refs.refidx{:});
-    
+       
     % do knn
     [pIdx, pDst] = knnsearch(refslib, src.lib, varargin{:});
     pRefIdxs = refsidx(pIdx);
@@ -153,10 +155,22 @@ function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, va
     end
     
     % return patches
-    patches = patchlib.lib2patches(refs.lib, pIdx, pRefIdxs, patchSize);
+    refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
+    patches = patchlib.lib2patches(refslibs, pIdx, pRefIdxs, patchSize);
 end
 
+function [src, refs] = addlocation(src, refs, locwt)
+% adds location subscripts to the src + refs libraries.
+    srcsub = size2sub(size(src.vol));
+    srcvec = cat(2, srcsub{:});
+    src.lib = [src.lib, bsxfun(@times, locwt, srcvec(src.grididx, :))];
 
+    refsub = cellfun(@(x) size2sub(size(x)), refs.vols, 'UniformOutput', false);
+    refvecs = cellfun(@(x) cat(2, x{:}), refsub, 'UniformOutput', false);
+    refvecssel = cellfun(@(x, y) x(y, :), refvecs, refs.grididx, 'UniformOutput', false);
+    refsubvec = cellfun(@(x) bsxfun(@times, locwt, x), refvecssel, 'UniformOutput', false);
+    refs.lib = cellfun(@horzcat, refs.lib, refsubvec, 'UniformOutput', false);
+end
 
 function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, varargin)
 % getPatchFunction (2dLocation_in_src, ref), 
@@ -186,6 +200,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
     % also allow 'localpreprocess'
     p = inputParser();
     p.addParameter('local', [], @isnumeric);
+    p.addParameter('location', 0, @isnumeric);
     p.addParameter('searchfn', [], @(x) isa(x, 'function_handle'));
     p.addParameter('buildreflibs', true, @islogical);
     p.KeepUnmatched = true;
@@ -196,10 +211,16 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
     if isempty(inputs.local) && isempty(inputs.searchfn)
         assert(inputs.buildreflibs)
         inputs.searchfn = @globalsearch;
-    elseif ~isempty(inputs.local)
+    end
+    
+    if ~isempty(inputs.local)
         assert(inputs.buildreflibs);
         assert(isnumeric(inputs.local));
         assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
         inputs.searchfn = @(x, y, z, varargin) localsearch(x, y, z, inputs.local, varargin{:});
+    end    
+    
+    if isscalar(inputs.location)
+        inputs.location = repmat(inputs.location, [1, ndims(refs{1})]);
     end
 end

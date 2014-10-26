@@ -35,12 +35,13 @@ classdef patchlib < handle
         
         % main tools
         [idx, newVolSize, gridSize, overlap] = grid(volSize, patchSize, patchOverlap, varargin);
-        [qpatches, bel, pot] = patchmrf(varargin);
+        [qpatches, varargout] = patchmrf(varargin);
         varargout = stackPatches(patches, patchSize, gridSize, varargin);
         [patches, pDst, pIdx, pDstIdx, gridSize, refgridsize] = volknnsearch(src, refs, patchSize, varargin);
         
         % mini-tools
-        dst = l2overlapdst(patches1, patches2, df21, patchSize, patchOverlap, nFeatures);
+        dst = l2overlapdst(pstr1, pstr2, patchSize, patchOverlap, nFeatures);
+        dst = correspdst(pstr1, pstr2, ~, ~, dvFact);
         patchSize = guessPatchSize(n, dim);
         patches = lib2patches(lib, pIdx, varargin)
         [gridSize, newVolSize] = gridsize(volSize, patchSize, patchOverlap, varargin)
@@ -50,7 +51,7 @@ classdef patchlib < handle
         [patchesCell, patchSize] = patchesmat2cell(patches, patchSize);
         rect = drawPatchRect(patchloc, patchSize, color);
         isv = isvalidoverlap(overlap);
-        sub = corresp2disp(siz, varargin)
+        [sub, loc, corresp] = corresp2disp(siz, varargin)
     end
     
 end
