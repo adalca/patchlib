@@ -1,4 +1,4 @@
-function sub = corresp2disp(siz, varargin)
+function [sub, loc, corresp] = corresp2disp(siz, varargin)
 % CORRESP2DISP transform locations to displacement.
 %   sub = corresp2disp(srcsiz, insub) with insub as nDim cell, with each entry being a Nx1 vector
 %       with N = prod(srcsiz), or a srcsiz vector, indicating for each source voxel, where the
@@ -6,6 +6,8 @@ function sub = corresp2disp(siz, varargin)
 %   
 %   sub = corresp2disp(srcsiz, refsiz, idx) idx has to be NxM where N = prod(srcsiz), M can be
 %       anything >= 1. sub is then a cell array with entries NxM
+%
+%   [sub, loc, corresp] = corresp2disp(...)
 %
 % Example:
 %   refSize = [100, 100];
@@ -19,6 +21,8 @@ function sub = corresp2disp(siz, varargin)
 %   patchview.figure; 
 %   subplot(1,2,1); imagesc(reshape(insub{1}, srcSize)); 
 %   subplot(1,2,2); imagesc(reshape(sub1{1}, srcSize));
+%
+% TODO: warning: is this dealing with non-full overlaps properly? Not Sure. 
     
     loc = size2ndgrid(siz);
     loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
