@@ -1,4 +1,4 @@
-function [qpatches, bel, pot] = patchmrf(varargin)
+function [qpatches, varargout] = patchmrf(varargin)
 % PATCHMRF mrf patch inference on patch candidates on a grid
 %   qpatches = patchmrf(patches, gridSize, patchDst) perform mrf inference on patch candidates on a
 %   grid. patches is either a NxK cell of formatted patches, or a NxVxK array, gridSize is a 1xD
@@ -25,6 +25,10 @@ function [qpatches, bel, pot] = patchmrf(varargin)
 %       lambda_node: (default: 1) the value for lambda_node in pot_node = exp(-lambda_node * dst).
 %       lambda_edge: (default: 1) the value for lambda_edge.
 %       maxLBPIters: (default: 100). the maximum number of LBP iterations. 
+%       pIdx
+%       refgridsize
+%
+%   [qpatches, bel, pot, pIdxSel, rIdxSel] = patchmrf(...)
 %
 % Requires: UGM toolbox
 %
@@ -34,6 +38,19 @@ function [qpatches, bel, pot] = patchmrf(varargin)
    
     [patches, gridSize, pDst, inputs] = parseinputs(varargin{:});
     nDims = numel(inputs.patchSize);
+    if nargout >= 4
+        assert(~isempty(inputs.pIdx), 'if asking for pIdxSel, need pIdx input');
+    end
+    
+    % if using correspondances, build correspondance vector
+    if inputs.useCorresp
+        idx = permute(inputs.pIdx, [1, 3, 2]);
+        dispSub = patchlib.corresp2disp(gridSize, inputs.refgridsize, idx);
+        dispSub = cat(2, dispSub{:});
+    end
+    
+    % prepare the 'sub vector' of each location
+    locSub = ind2subvec(gridSize, (1:size(patches, 1))');
     
     % Node potentials. Should be nNodes x nStates;
     nodePot = exp(-inputs.lambda_node * pDst);
@@ -44,9 +61,6 @@ function [qpatches, bel, pot] = patchmrf(varargin)
     adj = vol2adjacency(gridSize, connectivity);
     nStates = size(patches, 3);
     edgeStruct = UGM_makeEdgeStruct(adj, nStates , true, inputs.maxLBPIters);
-    
-    % prepare the 'sub vector' of each dimension
-    dimsub = ind2subvec(gridSize, (1:size(patches, 1))');
     
     % compute distances. 
     % TODO: this computation is doubled for no reason :(
@@ -60,27 +74,58 @@ function [qpatches, bel, pot] = patchmrf(varargin)
         patches1 = permute(patches(n1, :, :), [3, 2, 1]); 
         patches2 = permute(patches(n2, :, :), [3, 2, 1]); 
         
-        % get the distance.
-        df = dimsub(n2, :) - dimsub(n1, :);
-        dst = inputs.edgeDst(patches1, patches2, df, inputs.patchSize, inputs.patchOverlap);
+        % prepare structs
+        pstr1 = struct('patches', patches1, 'loc', locSub(n1, :));
+        pstr2 = struct('patches', patches2, 'loc', locSub(n2, :));
         
-        edgePot(:,:,e) = exp(-inputs.lambda_edge * dst);
+        % add displacement and reference
+        % TODO: add pIdx(n1, :) ?
+        if inputs.useCorresp
+            pstr1.disp = permute(dispSub(n1, :, :), [3, 2, 1]); 
+            pstr1.ref = inputs.rIdx(n1, :);
+            pstr2.disp = permute(dispSub(n2, :, :), [3, 2, 1]); 
+            pstr2.ref = inputs.rIdx(n2, :);
+        end
+            
+        % get the distance.
+        dst = inputs.edgeDst(pstr1, pstr2, inputs.patchSize, inputs.patchOverlap);
+        
+        edgePot(:, :, e) = exp(-inputs.lambda_edge * dst);
     end
     
     % run LBP
     [nodeBel, edgeBel, logZ] = UGM_Infer_LBP(nodePot, edgePot, edgeStruct);
+    assert(isclean(nodeBel), 'PATCHLIB:PATCHMRF', 'Bad nodeBel');
         
     % extract max nodes
-    assert(isclean(nodeBel), 'PATCHLIB:PATCHMRF', 'bad nodeBel');
     [~, maxNodes] = max(nodeBel, [], 2);
     qpatches = zeros([size(patches, 1), size(patches, 2)]);
+    pIdxSel = nan([size(patches, 1), 1]);
+    rIdxSel = nan([size(patches, 1), 1]);
     for i = 1:size(qpatches, 1)
         qpatches(i, :) = patches(i, :, maxNodes(i));
+        
+        if nargout >= 4 && ~isempty(inputs.pIdx)
+            pIdxSel(i) = inputs.pIdx(i, maxNodes(i));
+            rIdxSel(i) = inputs.rIdx(i, maxNodes(i));
+        end
     end
     
     % prepare outputs
-    bel = struct('nodeBel', nodeBel, 'edgeBel', edgeBel, 'logZ', logZ, 'maxNodes', maxNodes);
-    pot = struct('nodePot', nodePot, 'edgePot', edgePot, 'edgeStruct', edgeStruct);
+    varargout = {};
+    if nargout >= 2
+        varargout{1} = struct('nodeBel', nodeBel, 'edgeBel', edgeBel, ...
+            'logZ', logZ, 'maxNodes', maxNodes);
+    end
+    if nargout >= 3
+        varargout{2} = struct('nodePot', nodePot, 'edgePot', edgePot, 'edgeStruct', edgeStruct);
+    end
+    if nargout >= 4
+        varargout{3} = pIdxSel;
+    end       
+    if nargout >= 5
+        varargout{4} = rIdxSel;
+    end       
 end
 
 function [patches, gridSize, dst, inputs] = parseinputs(varargin)
@@ -155,9 +200,22 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('lambda_node', 1, @isnumeric);
     p.addParameter('lambda_edge', 1, @isnumeric);
     p.addParameter('maxLBPIters', 100, @isnumeric);
+    p.addParameter('pIdx', [], @isnumeric);
+    p.addParameter('rIdx', [], @isnumeric);
+    p.addParameter('refgridsize', [], @isnumeric);
     p.parse(paramvalues{:})
     inputs = p.Results;
     
     inputs.patchSize = patchSize;
     inputs.patchOverlap = patchOverlap;
+    
+    % use correspondances if both refgridsize and pIdx are passed in.
+    inputs.useCorresp = false;
+    if ~isempty(inputs.pIdx) && ~isempty(inputs.refgridsize)
+        inputs.useCorresp = true;
+    end
+    
+    if ~isempty(inputs.pIdx) && ismember('rIdx', p.UsingDefaults)
+    	inputs.rIdx = ones(size(inputs.pIdx));
+    end
 end
