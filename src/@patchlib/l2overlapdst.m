@@ -1,7 +1,11 @@
-function dst = l2overlapdst(patches1, patches2, df21, patchSize, patchOverlap, nFeatures)
+function dst = l2overlapdst(pstr1, pstr2, patchSize, patchOverlap, nFeatures)
+    
+    patches1 = pstr1.patches;
+    patches2 = pstr2.patches;
+    df21 = pstr2.loc - pstr1.loc;
 
-    narginchk(5, 6);
-    if nargin == 5
+    narginchk(4, 4);
+    if nargin == 4
         nFeatures = 1;
     end
     nDims = numel(patchSize);
