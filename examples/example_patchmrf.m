@@ -9,8 +9,10 @@ function example_patchmrf(varargin)
         % extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
         [patches, pDst, ~, ~, srcgridsize] = ...
             patchlib.volknnsearch(noisyim, im, patchSize, 'mrf', 'K', 10);
+        
         qpatches = patchlib.patchmrf(patches, srcgridsize, pDst);
         resimg = patchlib.quilt(qpatches, srcgridsize, patchSize, 'mrf'); 
+        
         subplot(1, 3, 1); imagesc(noisyim);
         subplot(1, 3, 2); imagesc(im);
         subplot(1, 3, 3); imagesc(resimg);
