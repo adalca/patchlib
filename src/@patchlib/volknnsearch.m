@@ -25,9 +25,16 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
 %       and refs is a structs with fields vols, lib, grididx, cropVolSize, gridSize, refidx -- all
 %       cells of size nRefs x 1
 %
+%     - 'location' - a location based weight. the location of each voxel (in spatial coordinates) is
+%       added to the feature vector, times the factor passed in via 'location'. default is 0
+%       (location does not factor in). scalar or [1 x nDims] vector. 
+%
 %     - 'buildreflibs': logical (default: true) on whether to pre-compute the reference libraries
 %       (which can take space and memory). This must stay true for the default global or local
 %       search functions.
+%
+%     - 'mask' logical mask the size of the source vol, volknnsearch will only run for voxels where
+%       mask is true
 %   
 %     - any Param/Value argument for knnsearch.
 %
@@ -47,6 +54,7 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
     src.vol = srcvol;
     [src.lib, src.grididx, src.cropVolSize, src.gridSize] = ...
         patchlib.vol2lib(srcvol, patchSize, srcoverlap{:});
+    src.mask = ifelse(isempty(inputs.mask), true(size(src.vol)), inputs.mask);
     
     % build reference the libraries
     if inputs.buildreflibs
@@ -60,21 +68,23 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
     end
     
     % compute
-    [patches, pDst, pIdx, pRefIdxs] = ...
-        inputs.searchfn(src, refs, patchSize, knnvarargin{:});
+    [pIdx, pRefIdxs, pDst] = inputs.searchfn(src, refs, knnvarargin{:});
     srcgridsize = src.gridSize;
+    
+    % extract the patches
+    mask = src.mask(src.grididx);
+    refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
+    patchesm = patchlib.lib2patches(refslibs, pIdx(mask, :, :), pRefIdxs(mask, :, :), patchSize);
+    patches = maskvox2vol(patchesm, mask, @nan);
     
     if iscell(refvols)
         refgridsize = refs.gridSize;
     else
         refgridsize = refs.gridSize{1};
     end
-    
 end
 
-
-
-function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spacing, varargin)
+function [pIdx, pRefIdxs, pDst] = localsearch(src, refs, spacing, varargin)
 % perform a global search, with <spacing> around each voxel in each ref included in the search for
 % knn for that voxel.
 
@@ -100,10 +110,11 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
     K = ifelse(isempty(f), '1', 'varargin{f + 1}', true);
         
     % go through each voxel, get reference patches from nearby from each reference.
-    pIdx = zeros(size(src.lib, 1), K);
-    pRefIdxs = zeros(size(src.lib, 1), K);
-    pDst = zeros(size(src.lib, 1), K);
-    for i = 1:size(src.lib, 1)
+    pIdx = nan(size(src.lib, 1), K);
+    pRefIdxs = nan(size(src.lib, 1), K);
+    pDst = nan(size(src.lib, 1), K);
+    subset = find(src.mask(src.grididx))';
+    for i = subset %1:size(src.lib, 1)
         
         % compute the reference linear idx and reference number for the regions around this voxel
         ridxwindow = cell(nRefs, 1);
@@ -129,15 +140,9 @@ function [patches, pDst, pIdx, pRefIdxs] = localsearch(src, refs, patchSize, spa
         pDst(i, :) = d; 
         pRefIdxs(i, :) = riall(p);
     end
-
-    % extract the patches
-    refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
-    patches = patchlib.lib2patches(refslibs, pIdx, pRefIdxs, patchSize);
 end
 
-
-
-function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, varargin)
+function [pIdx, pRefIdxs, pDst] = globalsearch(src, refs, varargin)
 % do a global search
 
     % compute one ref library, and associated indexes
@@ -145,18 +150,18 @@ function [patches, pDst, pIdx, pRefIdxs] = globalsearch(src, refs, patchSize, va
     refsidx = cat(1, refs.refidx{:});
        
     % do knn
-    [pIdx, pDst] = knnsearch(refslib, src.lib, varargin{:});
-    pRefIdxs = refsidx(pIdx);
+    mask = src.mask(src.grididx);
+    [pIdxm, pDstm] = knnsearch(refslib, src.lib(mask, :), varargin{:});
+    pRefIdxsm = refsidx(pIdxm);
+    pIdx = maskvox2vol(pIdxm, mask(:), @nan);
+    pDst = maskvox2vol(pDstm, mask(:), @nan);
+    pRefIdxs = maskvox2vol(pRefIdxsm, mask(:), @nan);
     
     % fix pIdx for return
     sizes = cellfun(@(x) size(x, 1), refs.lib);
     for i = 1:numel(refs.lib)
         pIdx(pRefIdxs == i) = pIdx(pRefIdxs == i) - sum(sizes(1:i-1));
     end
-    
-    % return patches
-    refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
-    patches = patchlib.lib2patches(refslibs, pIdx, pRefIdxs, patchSize);
 end
 
 function [src, refs] = addlocation(src, refs, locwt)
@@ -203,6 +208,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
     p.addParameter('location', 0, @isnumeric);
     p.addParameter('searchfn', [], @(x) isa(x, 'function_handle'));
     p.addParameter('buildreflibs', true, @islogical);
+    p.addParameter('mask', [], @islogical);
     p.KeepUnmatched = true;
     p.parse(varargin{:});
     knnvargin = struct2cellWithNames(p.Unmatched);
@@ -217,7 +223,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
         assert(inputs.buildreflibs);
         assert(isnumeric(inputs.local));
         assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
-        inputs.searchfn = @(x, y, z, varargin) localsearch(x, y, z, inputs.local, varargin{:});
+        inputs.searchfn = @(x, y, varargin) localsearch(x, y, inputs.local, varargin{:});
     end    
     
     if isscalar(inputs.location)
