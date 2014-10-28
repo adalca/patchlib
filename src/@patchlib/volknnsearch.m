@@ -75,7 +75,13 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
     mask = src.mask(src.grididx);
     refslibs = cellfun(@(x) x(:, 1:prod(patchSize)), refs.lib, 'UniformOutput', false);
     patchesm = patchlib.lib2patches(refslibs, pIdx(mask, :, :), pRefIdxs(mask, :, :), patchSize);
-    patches = maskvox2vol(patchesm, mask, @nan);
+    % TODO - unsure. if mask is *very* small compared to the volume, might need to work in sparse?
+    % but then, most other functions need to worry about memory as well.
+    if sum(~mask(:)) > 0
+        patches = maskvox2vol(patchesm, mask, @sparse);
+    else
+        patches = patchesm;
+    end
     
     if iscell(refvols)
         refgridsize = refs.gridSize;
@@ -92,11 +98,11 @@ function [pIdx, pRefIdxs, pDst] = localsearch(src, refs, spacing, varargin)
     
     % get subscripts refs.subs that match the linear index in refs
     fn = @(x, y) ind2subvec(size(x), y(:));
-    refs.subs = cellfun(fn, refs.vols, refs.grididx, 'UniformOutput', false);
+    refs.subs = cellfun(fn, refs.vols(:), refs.grididx(:), 'UniformOutput', false);
 
     % get the linear indexes grididx from full volume space to gridSize
     fn = @(x, y, z) reshape(ind2ind(size(x), y, z), y);
-    ridx = cellfun(fn, refs.vols, refs.gridSize, refs.grididx, 'UniformOutput', false);
+    ridx = cellfun(fn, refs.vols(:), refs.gridSize(:), refs.grididx(:), 'UniformOutput', false);
     
     % get subscript local ranges for each voxel. 
     % Pre-computation should save time inside the main for-loop

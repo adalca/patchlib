@@ -1,4 +1,6 @@
 function patchRef2D(vol, refs, vIdx, pIdx, rIdx, patchSize, varargin)
+% draft comments.
+% See the location of the patches from the current volume in the reference volume(s)
     
     % setup
     [refs, volGrid, refGrids, refEquivs] = parseinputs(vol, refs, vIdx, pIdx, rIdx, patchSize, varargin{:});
