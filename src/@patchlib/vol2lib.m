@@ -51,6 +51,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
         return
     end
     
+    
     if nargin == 2
         varargin{1} = 'sliding';
     end
@@ -70,7 +71,9 @@ function varargout = vol2lib(vol, patchSize, varargin)
     
     % initialize library of subscripts into the volume
     sub = cell(numel(patchSize), 1);
-    sub(:) = {zeros(numel(initidx), prod(patchSize))};
+    for dim = 1:numel(patchSize)
+        sub{dim} = zeros(numel(initidx), prod(patchSize));
+    end
     
     % go through each shift
     for s = 1:prod(patchSize)
@@ -82,7 +85,9 @@ function varargout = vol2lib(vol, patchSize, varargin)
     end
     
     % for each dimension, put the subscript library in a vector
-    sub = cellfun(@(x) x(:), sub, 'UniformOutput', false); 
+    for dim = 1:numel(patchSize)
+        sub{dim} = sub{dim}(:);
+    end
     
     % compute the library of linear indexes into the volume
     idxvec = sub2ind(cropVolSize, sub{:});
@@ -128,4 +133,5 @@ function varargout = vol2libcell(vol, patchSize, varargin)
         end
         varargout{5} = idxcell;
     end
-end        
+end
+        

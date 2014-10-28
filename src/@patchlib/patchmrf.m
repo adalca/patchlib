@@ -37,7 +37,6 @@ function [qpatches, varargout] = patchmrf(varargin)
 % Contact: adalca@csail
    
     [patches, gridSize, pDst, inputs] = parseinputs(varargin{:});
-    patchesperm = permute(patches, [3, 2, 1]);
     nDims = numel(inputs.patchSize);
     if nargout >= 4
         assert(~isempty(inputs.pIdx), 'if asking for pIdxSel, need pIdx input');
@@ -46,10 +45,9 @@ function [qpatches, varargout] = patchmrf(varargin)
     % if using correspondances, build correspondance vector
     if inputs.useCorresp
         idx = permute(inputs.pIdx, [1, 3, 2]);
-        dispSub = patchlib.corresp2disp(gridSize, inputs.refgridsize, idx, inputs.rIdx);
+        dispSub = patchlib.corresp2disp(gridSize, inputs.refgridsize, idx);
         dispSub = cat(2, dispSub{:});
     end
-    dispSubperm = permute(dispSub, [3, 2, 1]); % will use the permutation version
     
     % prepare the 'sub vector' of each location
     locSub = ind2subvec(gridSize, (1:size(patches, 1))');
@@ -73,8 +71,8 @@ function [qpatches, varargout] = patchmrf(varargin)
         n2 = edgeStruct.edgeEnds(e, 2);
         
         % extract the patches for these two node
-        patches1 = patchesperm(:, :, n1);
-        patches2 = patchesperm(:, :, n2);
+        patches1 = permute(patches(n1, :, :), [3, 2, 1]); 
+        patches2 = permute(patches(n2, :, :), [3, 2, 1]); 
         
         % prepare structs
         pstr1 = struct('patches', patches1, 'loc', locSub(n1, :));
@@ -83,9 +81,9 @@ function [qpatches, varargout] = patchmrf(varargin)
         % add displacement and reference
         % TODO: add pIdx(n1, :) ?
         if inputs.useCorresp
-            pstr1.disp = dispSubperm(:, :, n1); 
+            pstr1.disp = permute(dispSub(n1, :, :), [3, 2, 1]); 
             pstr1.ref = inputs.rIdx(n1, :);
-            pstr2.disp = dispSubperm(:, :, n2); 
+            pstr2.disp = permute(dispSub(n2, :, :), [3, 2, 1]); 
             pstr2.ref = inputs.rIdx(n2, :);
         end
             
@@ -204,7 +202,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('maxLBPIters', 100, @isnumeric);
     p.addParameter('pIdx', [], @isnumeric);
     p.addParameter('rIdx', [], @isnumeric);
-    p.addParameter('refgridsize', [], @(x) isnumeric(x) || iscell(x));
+    p.addParameter('refgridsize', [], @isnumeric);
     p.parse(paramvalues{:})
     inputs = p.Results;
     

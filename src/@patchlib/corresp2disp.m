@@ -1,18 +1,13 @@
 function [sub, loc, corresp] = corresp2disp(siz, varargin)
-% CORRESP2DISP transform reference locations to displacement.
+% CORRESP2DISP transform locations to displacement.
 %   sub = corresp2disp(srcsiz, insub) with insub as nDim cell, with each entry being a Nx1 vector
 %       with N = prod(srcsiz), or a srcsiz vector, indicating for each source voxel, where the
 %       correspondance is into the reference. 
 %   
-%   sub = corresp2disp(srcsiz, refsiz, pIdx) reference idx has to be NxM where N = prod(srcsiz), M 
-%       can be anything >= 1. sub is then a cell array with entries NxM
-%
-%   sub = corresp2disp(srcsiz, refsiz, pIdx, rIdx) 
-%
-%   sub = corresp2disp(..., 'reshape') reshape each sub vector to siz
+%   sub = corresp2disp(srcsiz, refsiz, idx) idx has to be NxM where N = prod(srcsiz), M can be
+%       anything >= 1. sub is then a cell array with entries NxM
 %
 %   [sub, loc, corresp] = corresp2disp(...)
-%
 %
 % Example:
 %   refSize = [100, 100];
@@ -29,48 +24,20 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
 %
 % TODO: warning: is this dealing with non-full overlaps properly? Not Sure. 
     
-    doreshape = strcmp('reshape', varargin{end});
-    if doreshape
-        varargin = varargin(1:end-1);
-    end
-
     loc = size2ndgrid(siz);
     loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
     
-    % 
-    if numel(varargin) == 2 || numel(varargin) == 3
-        % get the reference sizes, 
+    if nargin == 3
         refsize = varargin{1};
-        if ~iscell(refsize), 
-            refsize = {refsize}; 
-        end
-        pIdx = varargin{2};
-        rIdx = ifelse(numel(varargin) == 2, 'ones(size(pIdx))', 'varargin{3}', true);
-        
-        corresp = cellfun(@(x) zeros(size(pIdx)), cell(1, numel(siz)), 'UniformOutput', false);
-        
-        for i = 1:numel(refsize)
-            rMap = rIdx == i;
-            correspm = cell(1, numel(refsize{1}));
-            [correspm{:}] = ind2sub(refsize{i}, pIdx(rMap));
-            
-            for d = 1:numel(refsize{1})
-                corresp{d}(rMap) = correspm{d};
-            end
-        end
+        idx = varargin{2};
+        corresp = cell(1, numel(refsize));
+        [corresp{:}] = ind2sub(refsize, idx);
     else
-        
-        assert(numel(varargin) == 1);
+        assert(nargin == 2);
         corresp = varargin{1};
     end
-        
-    sub = cellfun(@join, corresp, loc, 'UniformOutput', false);
     
-    if doreshape 
-        sub = cellfun(@(x) reshape(x, siz), sub, 'UniformOutput', false);
-        corresp = cellfun(@(x) reshape(x, siz), corresp, 'UniformOutput', false);
-        loc = cellfun(@(x) reshape(x, siz), loc, 'UniformOutput', false);
-    end
+    sub = cellfun(@join, corresp, loc, 'UniformOutput', false);
 end
 
 function j = join(x, y)
