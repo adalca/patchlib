@@ -48,8 +48,8 @@ function [qpatches, varargout] = patchmrf(varargin)
         idx = permute(inputs.pIdx, [1, 3, 2]);
         dispSub = patchlib.corresp2disp(gridSize, inputs.refgridsize, idx, inputs.rIdx);
         dispSub = cat(2, dispSub{:});
+		dispSubperm = permute(dispSub, [3, 2, 1]); % will use the permutation version
     end
-    dispSubperm = permute(dispSub, [3, 2, 1]); % will use the permutation version
     
     % prepare the 'sub vector' of each location
     locSub = ind2subvec(gridSize, (1:size(patches, 1))');
