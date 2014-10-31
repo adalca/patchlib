@@ -229,6 +229,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
         assert(inputs.buildreflibs);
         assert(isnumeric(inputs.local));
         assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
+        if isscalar(inputs.local), inputs.local = inputs.local * ones(1, ndims(refs{1})); end
         inputs.searchfn = @(x, y, varargin) localsearch(x, y, inputs.local, varargin{:});
     end    
     
