@@ -51,7 +51,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
         
         for i = 1:numel(refsize)
             rMap = rIdx == i;
-            correspm = cell(1, numel(refsize{1}));
+            correspm = cell(1, numel(refsize{i}));
             [correspm{:}] = ind2sub(refsize{i}, pIdx(rMap));
             
             for d = 1:numel(refsize{1})
