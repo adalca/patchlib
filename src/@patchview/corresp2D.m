@@ -1,4 +1,4 @@
-function colmap = corresp2D(pIdx, refsize, srcgridsize, varargin)
+function colmap = corresp2D(pIdx, refgridsize, srcgridsize, varargin)
 % Warning: this function needs to be improved dramatically... or dropped...
 %   Maybe just functionality for the quiver...
 %   Idea: quiver different color for different references....
@@ -9,7 +9,7 @@ function colmap = corresp2D(pIdx, refsize, srcgridsize, varargin)
 % patchview.corresp2D(pIdx, refgridsize, srcgridsize, 'refIndex', pRefIdxs);
 
     [h, mode, vol, rIdx] = parseInputs(numel(pIdx), varargin{:});
-    if ~iscell(refsize), refsize = {refsize}; end
+    if ~iscell(refgridsize), refgridsize = {refgridsize}; end
     nDims = numel(srcgridsize);
     uRefs = unique(rIdx); % need to index in uRefs then!!
     colmap = jitter(numel(uRefs)); % TODO not do this for one ref only.
@@ -23,7 +23,7 @@ function colmap = corresp2D(pIdx, refsize, srcgridsize, varargin)
     corresp = zeros(size(pIdx, 1), nDims);
     for i = 1:numel(uRefs)
         rMap = rIdx == uRefs(i);
-        corresp(rMap, :) = ind2subvec(refsize{i}, pIdx(rMap));
+        corresp(rMap, :) = ind2subvec(refgridsize{i}, pIdx(rMap));
     end
     
     correspvols = cell(1, nDims);
