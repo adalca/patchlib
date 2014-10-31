@@ -13,7 +13,7 @@ function example_viewCorresp2D(varargin)
         patchview.corresp2D(pIdx, refgridsize, srcgridsize, 'refIndex', pRefIdxs);
     end
     
-    if ismember(1, testids)
+    if ismember(2, testids)
 
         % try 2 references
         refs = {im, normrnd(im, 0.05)};
