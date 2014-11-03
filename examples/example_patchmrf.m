@@ -27,7 +27,8 @@ function example_patchmrf(varargin)
         resimg1 = patchlib.quilt(patches(:,:,1), srcgridsize, patchSize); 
         
         % run an mrf on
-        edgefn = @(a1,a2,a3,a4) patchlib.correspdst(a1, a2, a3, a4, [], true); 
+        usemex = exist('pdist2mex', 'file') == 3;
+        edgefn = @(a1,a2,a3,a4) patchlib.correspdst(a1, a2, a3, a4, [], usemex); 
         [qp, ~, ~, pi] = ...
             patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , 'edgeDst', edgefn, ...
             'lambda_node', 0.1, 'lambda_edge', 10, 'pIdx', pIdx, 'refgridsize', refgridsize);
