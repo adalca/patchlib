@@ -34,9 +34,12 @@ function vol = quilt(patches, gridSize, varargin)
             if isa(inputs.nnWeights, 'function_handle')
                 inputs.nnWeights = inputs.nnWeights(patches);
             end
-            wshape = [size(inputs.nnWeights, 1), 1, size(inputs.nnWeights, 2)];
-            inputs.nnWeights = reshape(inputs.nnWeights, wshape);
-            inputs.nnWeights = repmat(inputs.nnWeights, [1, prod(patchSize), 1]);
+            if ismatrix(inputs.nnWeights) && ...
+                    all(size(inputs.nnWeights) == [size(patches, 1), size(patches, 3)]);
+                wshape = [size(inputs.nnWeights, 1), 1, size(inputs.nnWeights, 2)];
+                inputs.nnWeights = reshape(inputs.nnWeights, wshape);
+                inputs.nnWeights = repmat(inputs.nnWeights, [1, prod(patchSize), 1]);
+            end
             patches = inputs.nnAggregator(patches, inputs.nnWeights);
         else
             patches = inputs.nnAggregator(patches);
