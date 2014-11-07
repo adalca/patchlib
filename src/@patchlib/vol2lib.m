@@ -107,10 +107,10 @@ end
 function varargout = vol2libcell(vol, patchSize, varargin)
 
     % sep fcn
-    varargout{1} = cell(numel(vol), 1);
-    idx = cell(numel(vol), 1);
-    sizes = cell(numel(vol), 1);
-    gridSize = cell(numel(vol), 1);
+    varargout{1} = cell(size(vol));
+    idx = cell(size(vol));
+    sizes = cell(size(vol));
+    gridSize = cell(size(vol));
     
     % run vol2lib on each patch
     for i = 1:numel(vol)
