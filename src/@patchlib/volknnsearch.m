@@ -35,6 +35,8 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
 %
 %     - 'mask' logical mask the size of the source vol, volknnsearch will only run for voxels where
 %       mask is true
+%
+%     - 'passlibstruct' (default: false);
 %   
 %     - any Param/Value argument for knnsearch.
 %
@@ -51,15 +53,23 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
     [refs.vols, srcoverlap, refoverlap, knnvarargin, inputs] = parseinputs(refvols, varargin{:});
     
     % source library
-    src.vol = srcvol;
-    [src.lib, src.grididx, src.cropVolSize, src.gridSize] = ...
-        patchlib.vol2lib(srcvol, patchSize, srcoverlap{:});
+    if inputs.passlibstruct
+        src = srcvol;
+    else 
+        src.vol = srcvol;
+        [src.lib, src.grididx, src.cropVolSize, src.gridSize] = ...
+            patchlib.vol2lib(srcvol, patchSize, srcoverlap{:});
+    end
     src.mask = ifelse(isempty(inputs.mask), true(size(src.vol)), inputs.mask);
     
     % build reference the libraries
     if inputs.buildreflibs
-        [refs.lib, refs.grididx, refs.cropVolSize, refs.gridSize, refs.refidx] = ...
-            patchlib.vol2lib(refs.vols, patchSize, refoverlap{:});
+        if inputs.passlibstruct
+            refs = refs.vols;
+        else
+            [refs.lib, refs.grididx, refs.cropVolSize, refs.gridSize, refs.refidx] = ...
+                patchlib.vol2lib(refs.vols, patchSize, refoverlap{:});
+        end
     end
     
     if inputs.location
@@ -159,9 +169,16 @@ function [pIdx, pRefIdxs, pDst] = globalsearch(src, refs, varargin)
     mask = src.mask(src.grididx);
     [pIdxm, pDstm] = knnsearch(refslib, src.lib(mask, :), varargin{:});
     pRefIdxsm = refsidx(pIdxm);
-    pIdx = maskvox2vol(pIdxm, mask(:), @nan);
-    pDst = maskvox2vol(pDstm, mask(:), @nan);
-    pRefIdxs = maskvox2vol(pRefIdxsm, mask(:), @nan);
+    pRefIdxsm = reshape(pRefIdxsm, size(pIdxm)); % necessary if size(pIdxm, 1) == 1;
+    if any(~mask(:))
+        pIdx = maskvox2vol(pIdxm, mask(:), @nan);
+        pDst = maskvox2vol(pDstm, mask(:), @nan);
+        pRefIdxs = maskvox2vol(pRefIdxsm, mask(:), @nan);
+    else
+        pIdx = pIdxm;
+        pDst = pDstm;
+        pRefIdxs = pRefIdxsm;
+    end
     
     % fix pIdx for return
     sizes = cellfun(@(x) size(x, 1), refs.lib);
@@ -189,9 +206,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
 % pre-sel voxels?
 % Other stuff for knnsearch
     
-    if ~iscell(refs)
-        refs = {refs};
-    end
+
     
     % check for source overlaps
     srcoverlap = {};
@@ -210,6 +225,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
     % 'local' means local search, and takes in spacing or function. 
     % also allow 'localpreprocess'
     p = inputParser();
+    p.addParameter('passlibstruct', false, @islogical);
     p.addParameter('local', [], @isnumeric);
     p.addParameter('location', 0, @isnumeric);
     p.addParameter('searchfn', [], @(x) isa(x, 'function_handle'));
@@ -220,6 +236,15 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
     knnvargin = struct2cellWithNames(p.Unmatched);
     inputs = p.Results;
     
+    if inputs.passlibstruct
+        nDims = ndims(refs.vols{1});
+    else
+        if ~iscell(refs)
+            refs = {refs};
+        end
+        nDims = ndims(refs{1});
+    end
+    
     if isempty(inputs.local) && isempty(inputs.searchfn)
         assert(inputs.buildreflibs)
         inputs.searchfn = @globalsearch;
@@ -229,11 +254,11 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, v
         assert(inputs.buildreflibs);
         assert(isnumeric(inputs.local));
         assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
-        if isscalar(inputs.local), inputs.local = inputs.local * ones(1, ndims(refs{1})); end
+        if isscalar(inputs.local), inputs.local = inputs.local * ones(1, nDims); end
         inputs.searchfn = @(x, y, varargin) localsearch(x, y, inputs.local, varargin{:});
     end    
     
     if isscalar(inputs.location)
-        inputs.location = repmat(inputs.location, [1, ndims(refs{1})]);
+        inputs.location = repmat(inputs.location, [1, nDims]);
     end
 end
