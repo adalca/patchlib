@@ -28,7 +28,7 @@ function [qpatches, varargout] = patchmrf(varargin)
 %       pIdx
 %       refgridsize
 %
-%   [qpatches, bel, pot, pIdxSel, rIdxSel] = patchmrf(...)
+%   [qpatches, bel, pot, qSel, pIdxSel, rIdxSel] = patchmrf(...). see qSel use in code.
 %
 % Requires: UGM toolbox
 %
@@ -45,14 +45,18 @@ function [qpatches, varargout] = patchmrf(varargin)
     
     % if using correspondances, build correspondance vector
     if inputs.useCorresp
+        warning('using useCorresp. Use with care, this is not thoroughly tested, especially as it related to including refgrididx');
+        siz = ifelse(isempty(inputs.srcSize), gridSize, inputs.srcSize);
         idx = permute(inputs.pIdx, [1, 3, 2]);
-        dispSub = patchlib.corresp2disp(gridSize, inputs.refgridsize, idx, inputs.rIdx);
+        dispSub = patchlib.corresp2disp(siz, inputs.refgridsize, idx, inputs.rIdx, 'srcGridIdx', inputs.gridIdx);
         dispSub = cat(2, dispSub{:});
 		dispSubperm = permute(dispSub, [3, 2, 1]); % will use the permutation version
     end
     
     % prepare the 'sub vector' of each location
-    locSub = ind2subvec(gridSize, (1:size(patches, 1))');
+    siz = ifelse(isempty(inputs.srcSize), gridSize, inputs.srcSize);
+    locSub = ind2subvec(siz, inputs.gridIdx(:));
+%     locSub = ind2subvec(gridSize, (1:size(patches, 1))');
     
     % Node potentials. Should be nNodes x nStates;
     nodePot = exp(-inputs.lambda_node * pDst);
@@ -101,16 +105,14 @@ function [qpatches, varargout] = patchmrf(varargin)
         
     % extract max nodes
     [~, maxNodes] = max(nodeBel, [], 2);
-    qpatches = zeros([size(patches, 1), size(patches, 2)]);
-    pIdxSel = nan([size(patches, 1), 1]);
-    rIdxSel = nan([size(patches, 1), 1]);
-    for i = 1:size(qpatches, 1)
-        qpatches(i, :) = patches(i, :, maxNodes(i));
-        
-        if nargout >= 4 && ~isempty(inputs.pIdx)
-            pIdxSel(i) = inputs.pIdx(i, maxNodes(i));
-            rIdxSel(i) = inputs.rIdx(i, maxNodes(i));
-        end
+    
+    % create index in pDst - sized array
+    qSel = sub2ind(size(inputs.pIdx), (1:size(pDst, 1))', maxNodes(:));
+    permpatches = permute(patches, [2, 1, 3]); % each row is a voxel
+    qpatches = permpatches(:, qSel)'; % for each voxel, use the selection
+    if nargout >= 4 && ~isempty(inputs.pIdx)
+        pIdxSel = inputs.pIdx(qSel);
+        rIdxSel = inputs.rIdx(qSel);
     end
     
     % prepare outputs
@@ -123,10 +125,13 @@ function [qpatches, varargout] = patchmrf(varargin)
         varargout{2} = struct('nodePot', nodePot, 'edgePot', edgePot, 'edgeStruct', edgeStruct);
     end
     if nargout >= 4
-        varargout{3} = pIdxSel;
+        varargout{3} = qSel;
     end       
     if nargout >= 5
-        varargout{4} = rIdxSel;
+        varargout{4} = pIdxSel;
+    end       
+    if nargout >= 6
+        varargout{5} = rIdxSel;
     end       
 end
 
@@ -205,6 +210,8 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('pIdx', [], @isnumeric);
     p.addParameter('rIdx', [], @isnumeric);
     p.addParameter('refgridsize', [], @(x) isnumeric(x) || iscell(x));
+    p.addParameter('gridIdx', 1:prod(gridSize), @isnumeric);
+    p.addParameter('srcSize', [], @isnumeric);
     p.parse(paramvalues{:})
     inputs = p.Results;
     
