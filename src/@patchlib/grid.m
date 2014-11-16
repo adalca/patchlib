@@ -80,6 +80,7 @@ function [patchOverlap, startDel, retsub] = parseinputs(volSize, patchSize, vara
         assert(numel(volSize) == numel(patchSize), ...
             'volume and patch have different dimensions: %d, %d', numel(volSize), numel(patchSize));
     end
+    assert(all(volSize >= patchSize), 'The volume size must be at least as big as the patchSize');
 
     if nargin == 2
         patchOverlap = 'sliding';
