@@ -25,17 +25,23 @@ function patches = lib2patches(lib, pIdx, varargin)
     assert(all(size(pIdx) == size(lIdx)) && max(lIdx(:)) <= numel(lib));
 
     % check inputs
-    [patchSize, docell] = parseinputs(size(lib{1}, 2), varargin{:});
+    [patchSize, docell, libfn] = parseinputs(size(lib{1}, 2), varargin{:});
     K = size(pIdx, 2);
     
-    % initiate patches
-    tmppatches = zeros([numel(pIdx), size(lib{1}, 2)]);
+    % create the patches
+    tmppatches = zeros([numel(pIdx), prod(patchSize)]);
     for i = 1:numel(lib)
+        
+        tlib = lib{i};
+        if ~isempty(libfn)
+            tlib = libfn(tlib, patchSize);
+        end
+        
         libmap = lIdx(:) == i;
-        tmppatches(libmap, :) = lib{i}(pIdx(libmap), :);
+        tmppatches(libmap, :) = tlib(pIdx(libmap), :);
     end
     
-    % reshape to [M x K x V]
+    % reshape tmppatches to [M x K x V]
     tmppatches = reshape(tmppatches, [size(pIdx), prod(patchSize)]);
 
     if strcmp(docell, 'cell')
@@ -51,30 +57,32 @@ function patches = lib2patches(lib, pIdx, varargin)
     else
         % reshape to [M x V x K]
         patches = permute(tmppatches, [1, 3, 2]);    
-    end
-    
+    end     
 end
 
-function [patchSize, docell] = parseinputs(V, varargin)
-    narginchk(1, 3)
+function [patchSize, docell, libfn] = parseinputs(V, varargin)
+% varargin can be:
+%       [], patchSize, 'cell', libfn - in that order, but all are optional
+
+    narginchk(1, 4)
     
-    if nargin == 1
+    docell = '';
+    libfn = [];
+    
+    if ~isempty(varargin) && isnumeric(varargin{1})
+        patchSize = varargin{1};
+        varargin = varargin(2:end);
+    else
         patchSize = patchlib.guessPatchSize(V);
     end
-    docell = '';
     
-    if numel(varargin) >=1
-        if isnumeric(varargin{1})
-            patchSize = varargin{1};
-        else
-            docell = varargin{1};
-            patchSize = patchlib.guessPatchSize(V);
-        end
+    if ~isempty(varargin) && ischar(varargin{1})
+        docell = varargin{1};
+        varargin = varargin(2:end);
     end
-       
-    if nargin == 3
-        docell = varargin{2};
-    end    
+    
+    if ~isempty(varargin) 
+        assert(isa(varargin{1}, 'function_handle'));
+        libfn = varargin{1};
+    end
 end
-    
-    

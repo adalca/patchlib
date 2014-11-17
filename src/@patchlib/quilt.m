@@ -95,6 +95,9 @@ function [patches, gridSize, patchSize, patchOverlap, inputs] = ...
         patchSize = patchlib.guessPatchSize(size(patches, 2));
     end
     
+    assert(size(patches, 1) == prod(gridSize), ...
+        'The number of patches %d must match prod(gridSize) %d', size(patches, 1), prod(gridSize));
+    
     patchOverlap = {};
     if isodd(numel(varargin))
         patchOverlap = varargin(1);
