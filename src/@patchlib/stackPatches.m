@@ -35,8 +35,8 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
     
     % input checking
     narginchk(3, 4);
-    K = size(patches, 3);    
-    
+    K = size(patches, 3);  
+        
     % compute the targetsize and target
     if prod(gridSize) == size(patches, 1)
         intargetSize = patchlib.grid2volSize(gridSize, patchSize, varargin{:});
