@@ -3,9 +3,12 @@ function dst = correspdst(pstr1, pstr2, ~, ~, dvFact, usemex)
     if nargin <= 4 || isempty(dvFact)
         dvFact = 100;
     end
+    
     if nargin <= 5
         usemex = false;
     end
+    
+    
     X = pstr1.disp ./ dvFact;
     Y = pstr2.disp ./ dvFact;
     
