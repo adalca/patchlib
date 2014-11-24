@@ -2,7 +2,7 @@ function dst = l2overlapdst(pstr1, pstr2, patchSize, patchOverlap, nFeatures)
     
     patches1 = pstr1.patches;
     patches2 = pstr2.patches;
-    df21 = pstr2.loc - pstr1.loc;
+    df21 = sign(pstr2.loc - pstr1.loc);
 
     narginchk(4, 4);
     if nargin == 4
@@ -24,8 +24,8 @@ function dst = l2overlapdst(pstr1, pstr2, patchSize, patchOverlap, nFeatures)
                 rangeCropCur{d} = (patchSize(d) - patchOverlap(d) + 1):patchSize(d);
                 rangeCropNext{d} = 1:patchOverlap(d);
             case -1
-                rangeCropNext{d} = (patchSize(d) - patchOverlap(d) + 1):patchSize(d);
                 rangeCropCur{d} = 1:patchOverlap(d);
+                rangeCropNext{d} = (patchSize(d) - patchOverlap(d) + 1):patchSize(d);
             case 0 
                 rangeCropNext{d} = 1:patchSize(d);
                 rangeCropCur{d} = 1:patchSize(d);
