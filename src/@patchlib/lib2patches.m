@@ -26,6 +26,7 @@ function patches = lib2patches(lib, pIdx, varargin)
 
     % check inputs
     [patchSize, docell, libfn] = parseinputs(size(lib{1}, 2), varargin{:});
+    assert(isvector(patchSize));
     K = size(pIdx, 2);
     
     % create the patches
