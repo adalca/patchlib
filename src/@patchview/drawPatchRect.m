@@ -1,18 +1,20 @@
 function rect = drawPatchRect(patchloc, patchSize, color)
-% DRAWPATCHRECT draw rectangles around a patch in the current axis
-%   rect = drawPatchRect(patchloc, patchSize) draw rectangles around a patch in the current axis.
+% DRAWPATCHRECT draw rectangles for a patch in the current axis
+%   rect = drawPatchRect(patchloc, patchSize) draw rectangles for a patch in the current axis.
 %   patchloc is a Nx2 vec: [y, x] (note that this is opposite of matlab usual 2D notation. We do
-%   this to keep with usual n-d notation). patchSize is 1x2 or Nx2 vector [y_i, x_i]. Returns the
-%   rectangle object.
+%   this to keep with usual n-d notation) specifies the top left corner of the patch. patchSize is
+%   1x2 or Nx2 vector [y_i, x_i]. Returns the rectangle object.
 %
-%   rect = drawPatchRect(patchloc, patchSize) allows for the specification of color, a Nx3 or Nx1
-%   cell of strings
+%   rect = drawPatchRect(patchloc, patchSize, color) allows for the specification of color, a Nx3 or
+%   Nx1 cell of strings
+%
+%   Warning: currently implemented only for 2D
 %   
 % Example: 
-%   figuresc(); 
+%   patchview.figure(); 
 %   imagesc(peaks(100)); 
 %   colormap gray; 
-%   patchlib.drawPatchRect([10, 50; 10, 55], [12, 7], {'r', 'b'});
+%   patchview.drawPatchRect([10, 50; 10, 55], [12, 7], {'r', 'b'});
 %
 % Contact: adalca@csail.mit.edu
     
@@ -20,6 +22,7 @@ function rect = drawPatchRect(patchloc, patchSize, color)
     if nargin == 2
         color = repmat({'b'}, [nPatches, 1]);
     end
+    assert(size(patchloc, 2) == 2, 'Currently, drawPatchRect is only implemented for 2D');
     
     if ~iscell(color)
         if ischar(color); 
