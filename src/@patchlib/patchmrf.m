@@ -107,7 +107,7 @@ function [qpatches, varargout] = patchmrf(varargin)
     [~, maxNodes] = max(nodeBel, [], 2);
     
     % create index in pDst - sized array
-    qSel = sub2ind(size(inputs.pIdx), (1:size(pDst, 1))', maxNodes(:));
+    qSel = sub2ind(size(pDst), (1:size(pDst, 1))', maxNodes(:));
     permpatches = permute(patches, [2, 1, 3]); % each row is a voxel
     qpatches = permpatches(:, qSel)'; % for each voxel, use the selection
     if nargout >= 4 && ~isempty(inputs.pIdx)
