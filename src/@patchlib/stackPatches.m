@@ -60,7 +60,7 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
     layerIds = unique(pLayerIdx);
     nLayers = numel(layerIds);
     layers = nan([nLayers, targetSize, K]);
-    if nargout == 2
+    if nargout >= 2
         idxmat = nan([2, nLayers, targetSize, K]);
     end
     
@@ -69,7 +69,7 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
         pLayer = find(pLayerIdx == layerIds(layerIdx));
 
         layerVotes = nan([targetSize, K]);
-        if nargout == 2
+        if nargout >= 2
             layerIdxMat = nan([2, targetSize, K]);
         end
         for pidx = 1:length(pLayer)
@@ -84,7 +84,7 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
             endSub = sub + [patchSize, K] - 1;
             layerVotes = actionSubArray('insert', layerVotes, sub, endSub, patch);
             
-            if nargout == 2
+            if nargout >= 2
                 locidx = repmat(idx, [2, patchSize, K]);
                 locidx(2, :) = repmat((1:prod(patchSize))', [K, 1]);
                 endSub = sub + [patchSize, K] - 1;
@@ -92,7 +92,7 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
             end
         end
         layers(layerIdx, :) = layerVotes(:);
-        if nargout == 2
+        if nargout >= 2
             idxmat(1, layerIdx, :) = layerIdxMat(1, :);
             idxmat(2, layerIdx, :) = layerIdxMat(2, :);
         end
@@ -101,7 +101,7 @@ function varargout = stackPatches(patches, patchSize, gridSize, varargin)
     % setup outputs
     varargout{1} = layers;
     
-    if nargout == 2
+    if nargout >= 2
 %         idxmat = shiftdim(idxmat, ndims(idxmat) - 1);
         varargout{2} = idxmat;
     end
