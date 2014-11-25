@@ -27,6 +27,7 @@ classdef patchview < handle
         grid2D(gridIdx, vol);
         colmap = corresp2D(pIdx, refgridsize, srcgridsize, varargin);
         patch3D(patch, range, varargin);
+        votehist(vol, patches, grididx, patchSize, varargin);
     end
     
 end
