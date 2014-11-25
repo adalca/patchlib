@@ -101,7 +101,14 @@ function votehist(vol, patches, grididx, patchSize, varargin)
                         
                 % get the box color of the hisogram to match the voxel.
                 set(gca, 'Color', colors{mod(N, 4)+1})
-                title('');
+                clickint = slice(y, x);
+                meanint = mean(votes(:));
+                medianint = median(votes(:));
+                msint = nan; 
+                try msint = meanShift(votes(:)); catch err, end
+                minint = min(votes(:));
+                title(sprintf('clicked:%3.2f, vmean:%3.2f, vmed:%3.2f, ms:%3.2f, min:%3.2f', ...
+                    clickint, meanint, medianint, msint, minint));
                 hold off;
                 
                 subplot(1, 2, 1);
@@ -109,7 +116,7 @@ function votehist(vol, patches, grididx, patchSize, varargin)
                     delete(rect(mod(N, 4) + 1));
                 end
                 rect(mod(N, 4) + 1) = patchview.drawPatchRect([y,x], [1, 1], colors{mod(N, 4)+1});
-                title(slice(y, x));
+                title(sprintf('#votes:%d, Intensity: %3.2f', numel(votes), slice(y, x)));
                 
                 % increase box count.
                 N = N + 1;
@@ -119,7 +126,8 @@ function votehist(vol, patches, grididx, patchSize, varargin)
         catch err
             okids = {'MATLAB:ginput:FigureDeletionPause', ...
                 'MATLAB:ginput:FigureUnavailable', ...
-                'patchLib:CleanFigClose'};
+                'patchview:CleanFigClose', ...
+                'MATLAB:ginput:Interrupted'};
             if ~any(strcmp(err.identifier, okids))
                 rethrow(err)
             end
