@@ -23,8 +23,7 @@ Visualization
 - [`patchview.corresp2D`](@patchview/corresp2D.m) visualize correspondances in 2D
 - [`patchview.drawPatchRect`](@patchview/drawPatchRect.m)  draw rectangles in the current axis
 - [`patchview.patch3D`](@patchview/patch3D.m) visualize a 3D patch
-
-
+- [`patchview.votehist`](@patchview/votehist.m) see histograms of the votes for locations (interactive)
 
 Helpers
 -------
@@ -38,6 +37,7 @@ Helpers
 - [`patchlib.patchesmat2cell`](@patchlib/patchesmat2cell.m)
 - [`patchlib.l2overlapdst`](@patchlib/l2overlapdst.m)
 - [`patchlib.lib2patches`](@patchlib/lib2patches.m) (still in draft mode)
+- ['patchlib.voteidx'](@patchlib/voteidx.m) get voting patches and the voxel location for a given volume location
 
 corresp2disp
 

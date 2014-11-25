@@ -51,7 +51,16 @@ classdef patchlib < handle
         [patchesCell, patchSize] = patchesmat2cell(patches, patchSize);
         rect = drawPatchRect(patchloc, patchSize, color);
         isv = isvalidoverlap(overlap);
-        [sub, loc, corresp] = corresp2disp(siz, varargin)
+        [sub, loc, corresp] = corresp2disp(siz, varargin);
+        [pIdx, locIdx] = voteidx(loc, volSize, grididx, patchSize);
+    end
+    
+    methods (Static, Access = private)
+        % private functions speficially to be used with volknnsearch
+        [pIdx, pRefIdxs, pDst] = volknnglobalsearch(src, refs, varargin);
+        [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin);
+        [patches, pDst, pIdx, rIdx, srcgridsize, refgridsize] = ...
+            volknnaggresults(vin, inputs)
     end
     
 end

@@ -53,7 +53,7 @@ function votehist(vol, patches, grididx, patchSize, varargin)
             y = round(y);
 
             % get index into patches and location
-            [pIdx, locIdx] = getvotes([y, x, sliceNr], size(vol), grididx, patchSize);
+            [pIdx, locIdx] = patchlib.voteidx([y, x, sliceNr], size(vol), grididx, patchSize);
             assert(isempty(pIdx) || max(pIdx) <= size(patches, 1));
             
             % if no votes for this area
@@ -134,19 +134,3 @@ function votehist(vol, patches, grididx, patchSize, varargin)
     end
     
 end
-
-
-function [pIdx, locIdx] = getvotes(loc, volSize, grididx, patchSize)
-    assert(numel(loc) == numel(patchSize));
-    
-    gridloc = ind2subvec(volSize, grididx);
-    
-    sel = bsxfun(@ge, gridloc, (loc - patchSize + 1));
-    sel = sel & bsxfun(@le, gridloc, loc);
-    sel = all(sel, 2);
-    
-    pIdx = find(sel);
-    pSel = gridloc(sel, :);
-    
-    locIdx = subvec2ind(patchSize, bsxfun(@minus, loc, pSel - 1));
-end    
