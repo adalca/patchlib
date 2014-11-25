@@ -15,7 +15,8 @@ function [votes, pIdx, locIdx, idx] = locvotes(loc, volSize, patches, grididx, p
 %   Author: adalca@csail.mit.edu   
     
     [pIdx, locIdx] = voteidx(loc, volSize, grididx, patchSize);
-    assert(isempty(pIdx) || max(pIdx) <= size(patches, 1));
+    assert(isempty(pIdx) || max(pIdx) <= size(patches, 1), ...
+        'pIdx failure: %d, %d', max(pIdx), size(patches, 1));
     
     
     if ~isempty(pIdx)
