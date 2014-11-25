@@ -37,7 +37,7 @@ Helpers
 - [`patchlib.patchesmat2cell`](@patchlib/patchesmat2cell.m)
 - [`patchlib.l2overlapdst`](@patchlib/l2overlapdst.m)
 - [`patchlib.lib2patches`](@patchlib/lib2patches.m) (still in draft mode)
-- ['patchlib.voteidx'](@patchlib/voteidx.m) get voting patches and the voxel location for a given volume location
+- ['patchlib.locvotes'](@patchlib/locvotes.m) votes given volume location
 
 corresp2disp
 

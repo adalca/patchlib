@@ -52,22 +52,16 @@ function votehist(vol, patches, grididx, patchSize, varargin)
             x = round(x);
             y = round(y);
 
-            % get index into patches and location
-            [pIdx, locIdx] = patchlib.voteidx([y, x, sliceNr], size(vol), grididx, patchSize);
-            assert(isempty(pIdx) || max(pIdx) <= size(patches, 1));
+            % get votes for this location
+            votes = patchlib.locvotes([y, x, sliceNr], size(vol), patches, grididx, patchSize);
             
             % if no votes for this area
-            if isempty(pIdx)
+            if isempty(votes)
                 
                 title('no votes found');
                 continue;
                 
             else
-                % get the votes
-                [pIdxSub, locIdxSub, Ksub] = ndgrid(pIdx, locIdx, 1:size(patches, 3));
-                idx = sub2ind(size(patches), pIdxSub(:), locIdxSub(:), Ksub(:));
-                votes = patches(idx);
-                
                 % prepare box colors
                 colors = {[1, 0.7, 0.5], [0.7, 0.7, 1], [0.7, 1, 0.7], [1, 0.8, 1]};
                 
