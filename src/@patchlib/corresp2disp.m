@@ -28,14 +28,29 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
 %   subplot(1,2,2); imagesc(reshape(sub1{1}, srcSize));
 %
 % TODO: warning: is this dealing with non-full overlaps properly? Not Sure. 
-    
-    doreshape = strcmp('reshape', varargin{end});
-    if doreshape
-        varargin = varargin(1:end-1);
-    end
+    warning('for now, refgrididx is assumed to be ''sliding''');
 
-    loc = size2ndgrid(siz);
-    loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
+    f = find(cellfun(@ischar, varargin), 1);
+    doreshape = false;
+    srcgrididx = reshape(1:prod(siz), siz);
+    if numel(f) == 1
+        v = varargin(f:end);
+        varargin = varargin(1:(f-1));
+        p = inputParser();
+        p.addParameter('reshape', doreshape, @islogical);
+        p.addParameter('srcGridIdx', srcgrididx, @isnumeric);
+        p.parse(v{:});
+        doreshape = p.Results.reshape;
+        srcgrididx = p.Results.srcGridIdx;
+    end
+        
+    
+    
+    
+    subvec = ind2subvec(siz, srcgrididx(:));
+    loc = num2cell(subvec, [1, numel(siz)]);
+%     loc = size2ndgrid(siz);
+%     loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
     
     % 
     if numel(varargin) == 2 || numel(varargin) == 3
@@ -49,6 +64,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
         
         corresp = cellfun(@(x) zeros(size(pIdx)), cell(1, numel(siz)), 'UniformOutput', false);
         
+        assert(numel(refsize) >= max(rIdx(:)), 'not enough reference sizes have been passed');
         for i = 1:numel(refsize)
             rMap = rIdx == i;
             correspm = cell(1, numel(refsize{i}));
@@ -58,6 +74,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
                 corresp{d}(rMap) = correspm{d};
             end
         end
+        
     else
         
         assert(numel(varargin) == 1);
@@ -67,9 +84,11 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
     sub = cellfun(@join, corresp, loc, 'UniformOutput', false);
     
     if doreshape 
-        sub = cellfun(@(x) reshape(x, siz), sub, 'UniformOutput', false);
-        corresp = cellfun(@(x) reshape(x, siz), corresp, 'UniformOutput', false);
-        loc = cellfun(@(x) reshape(x, siz), loc, 'UniformOutput', false);
+        %assumes srcgrididx is in the sight format
+        resiz = size(srcgrididx);
+        sub = cellfun(@(x) reshape(x, resiz), sub, 'UniformOutput', false);
+        corresp = cellfun(@(x) reshape(x, resiz), corresp, 'UniformOutput', false);
+        loc = cellfun(@(x) reshape(x, resiz), loc, 'UniformOutput', false);
     end
 end
 
