@@ -70,7 +70,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     
     % initialize library of subscripts into the volume
     sub = cell(numel(patchSize), 1);
-    sub(:) = {zeros(numel(initidx), prod(patchSize))};
+    sub(:) = {zeros(numel(initidx), prod(patchSize), 'uint32')};
     
     % go through each shift
     for s = 1:prod(patchSize)
