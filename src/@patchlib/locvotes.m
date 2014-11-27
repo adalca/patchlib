@@ -14,11 +14,18 @@ function [votes, pIdx, locIdx, idx] = locvotes(loc, volSize, patches, grididx, p
 %
 %   Author: adalca@csail.mit.edu   
     
+    % input checking
+    narginchk(5, 5);
+    grididx = grididx(:);
+    assert(numel(grididx) == size(patches, 1), 'grididx and patches are not compatible');
+    assert(prod(patchSize) == size(patches, 2), 'patchSize and patches are not compatible');
+
+    % retreive vote indexes
     [pIdx, locIdx] = voteidx(loc, volSize, grididx, patchSize);
     assert(isempty(pIdx) || max(pIdx) <= size(patches, 1), ...
         'pIdx failure: %d, %d', max(pIdx), size(patches, 1));
     
-    
+    % obtain indexes into the patches variable
     if ~isempty(pIdx)
         [pIdxSub, Ksub] = ndgrid(pIdx, 1:size(patches, 3));
         [locIdxSub, Ksub2] = ndgrid(locIdx, 1:size(patches, 3));
