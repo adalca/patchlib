@@ -36,9 +36,12 @@ function patches = lib2patches(lib, pIdx, varargin)
         tlib = lib{i};
         if ~isempty(libfn)
             tlib = libfn(tlib, patchSize);
+            assert(size(tlib, 2) == prod(patchSize));
         end
         
         libmap = lIdx(:) == i;
+        assert(isempty(max(pIdx(libmap))) || max(pIdx(libmap)) <= size(tlib, 1), ...
+            'pIdx points to more than the available library');
         tmppatches(libmap, :) = tlib(pIdx(libmap), :);
     end
     
