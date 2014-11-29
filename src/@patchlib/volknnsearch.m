@@ -89,11 +89,13 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
         
         % do the search
         srcpass = prepsrc(srcvol, patchSize, inputs, srcoverlap{:});
+        
         for i = 1:nRefs
-            i
+			if inputs.verbose, reftic = tic; end
             vargout{i} = cell(6, 1);
             [vargout{i}{:}] = patchlib.volknnsearch(srcpass, refvols{i}, patchSize, varargin{:});
             vargout{i}{1} = [];
+            if inputs.verbose, fprintf('volknnsearch with referene %d: %3.2f\n', i, toc(reftic)); end
         end
         
         % combine the results
