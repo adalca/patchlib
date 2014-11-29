@@ -95,7 +95,7 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
             vargout{i} = cell(6, 1);
             [vargout{i}{:}] = patchlib.volknnsearch(srcpass, refvols{i}, patchSize, varargin{:});
             vargout{i}{1} = [];
-            if inputs.verbose, fprintf('volknnsearch with referene %d: %3.2f\n', i, toc(reftic)); end
+            if inputs.verbose, fprintf('volknnsearch with reference %d: %3.2f\n', i, toc(reftic)); end
         end
         
         % combine the results
