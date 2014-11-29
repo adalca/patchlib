@@ -32,11 +32,12 @@ function patches = lib2patches(lib, pIdx, varargin)
     % create the patches
     tmppatches = zeros([numel(pIdx), prod(patchSize)]);
     for i = 1:numel(lib)
-        
+        i
         tlib = lib{i};
         if ~isempty(libfn)
             tlib = libfn(tlib, patchSize);
-            assert(size(tlib, 2) == prod(patchSize));
+            assert(size(tlib, 2) == prod(patchSize), ...
+                'library size %d does not match patch voxels %d', size(tlib, 2), prod(patchSize));
         end
         
         libmap = lIdx(:) == i;
