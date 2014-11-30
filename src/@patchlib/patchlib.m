@@ -52,7 +52,7 @@ classdef patchlib < handle
         rect = drawPatchRect(patchloc, patchSize, color);
         isv = isvalidoverlap(overlap);
         [sub, loc, corresp] = corresp2disp(siz, varargin);
-        [votes, pIdx, locIdx, idx] = locvotes(loc, volSize, patches, grididx, patchSize);
+        [votes, pIdx, locIdx, idx] = locvotes(loc, patches, grididx, patchSize, volSize);
     end
     
     methods (Static, Access = private)
