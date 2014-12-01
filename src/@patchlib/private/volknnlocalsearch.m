@@ -16,8 +16,6 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin
 
     % get the linear indexes grididx from full volume space to gridSize
     % problem: gridSize ir misleading since it doesn't start at [1,1,1]. 
-%     fn = @(x, y, s, z) reshape(subvec2ind(size(x), y, z), y);
-%     ridx = cellfunc(fn, {refs(:).vol}', {refs(:).gridSize}', {refs(:).grididx}');
     fn = @(x, s) subvec2ind(x, bsxfun(@minus, s + 1, s(1, :)));
     ridx = cellfunc(fn, {refs(:).gridSize}', refsubs); 
     
@@ -90,6 +88,7 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin
             % >> tmp_d = pdist2mex(src.lib',cat(1, refs.lib{:})','euc',[],[],[]);
             % but allows for specifying knnsearch param/value pairs in varargin
             [tmp_idx, tmp_d] = knnsearch(cat(1, refs.lib), src.lib, 'K', inf, varargin{:});
+            
             [~, si] = sort(tmp_idx, 2, 'ascend');
             for i = 1:size(tmp_d, 1), tmp_d(i, :) = tmp_d(i, si(i, :)); end
             
