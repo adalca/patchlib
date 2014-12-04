@@ -252,12 +252,13 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, p
     end
     nDims = numel(patchSize);
     
-    
+    % default global search
     if isempty(inputs.local) && isempty(inputs.searchfn)
         assert(inputs.buildreflibs)
         inputs.searchfn = @volknnglobalsearch;
     end
     
+    % default local search
     if ~isempty(inputs.local)
         assert(inputs.buildreflibs);
         assert(isnumeric(inputs.local));
