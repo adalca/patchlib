@@ -58,7 +58,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     end
     
     % inputs
-    [patchOverlap, dofiledrop, dropfile, memory] = parseInputs(varargin{:});
+    [patchOverlap, dofiledrop, dropfile, memory, procfun] = parseInputs(varargin{:});
     nDims = ndims(vol);
     volSize = size(vol);
     
@@ -75,11 +75,11 @@ function varargout = vol2lib(vol, patchSize, varargin)
     
     % compute the actual library
     if ~dofiledrop
-        library = memlib(vol, patchSize, cropVolSize, initsub, shift);
+        library = memlib(vol, patchSize, cropVolSize, initsub, shift, procfun);
         libsize = size(library);
         outlib = library;
     else
-        filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, memory{:});
+        filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun, memory{:});
         dropfile.grididx = grididx(:);
         dropfile.cropVolSize = cropVolSize;
         dropfile.gridSize = gridSize;
@@ -98,7 +98,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     varargout = outputs(1:nargout); 
 end
 
-function library = memlib(vol, patchSize, cropVolSize, initsub, shift)
+function library = memlib(vol, patchSize, cropVolSize, initsub, shift, procfun)
 % compute library in memory
 
     % initialize library of subscripts into the volume
@@ -109,13 +109,7 @@ function library = memlib(vol, patchSize, cropVolSize, initsub, shift)
    
     % update subscript library
     for dim = 1:nDims
-        
-        % go through each shift
-        for s = 1:prod(patchSize)
-            sub{dim}(:, s) = initsub{dim}(:) + shift(s, dim) - 1;
-        end
-        
-        % put the subscript library in a vector
+        sub{dim} = bsxfun(@plus, initsub{dim}(:), shift(:, dim)') - 1;
         sub{dim} = sub{dim}(:);
     end
     
@@ -126,34 +120,37 @@ function library = memlib(vol, patchSize, cropVolSize, initsub, shift)
     % compute final library
     library = vol(idxvec(:));
     library = reshape(library, [nGridVoxels, prod(patchSize)]);
+    library = procfun(library);
 end
 
 
-function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, memory)
+function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun, memory)
 % compute library by writing a bit at a time to file
 
     volclass = class(vol);
     volclassfn = str2func(volclass);
     
     nGridVoxels = numel(initsub{1});
-    if nargin <= 6
+    if nargin <= 7
         memRows = ceil(numel(vol) ./ prod(patchSize));
     else
         rowMemory = prod(patchSize) * 8;    
         memRows = max(floor(memory ./ rowMemory), 1);
     end
 
-    
-    % pre-allocation inside matlab file
-    dropfile.lib(nGridVoxels, 1:prod(patchSize)) = volclassfn(0); 
-    
     for i = 1:memRows:nGridVoxels
         range = i:min(i + memRows - 1, nGridVoxels);
         tmpsub = cellfunc(@(x) x(range), initsub);
-        library = memlib(vol, patchSize, cropVolSize, tmpsub, shift);
+        library = memlib(vol, patchSize, cropVolSize, tmpsub, shift, procfun);
+        
+        if i == 1
+            % pre-allocation inside matlab file
+            % dropfile.lib(nGridVoxels, 1:prod(patchSize)) = volclassfn(0); 
+            dropfile.lib(nGridVoxels, 1:size(library, 2)) = volclassfn(0); 
+        end
         
         % todo specify cols?
-        dropfile.lib(range, :) = library;
+        dropfile.lib(range, 1:size(library, 2)) = library;
     end
 end
 
@@ -183,7 +180,7 @@ function varargout = vol2libcell(vol, patchSize, varargin)
     end
 end        
 
-function [patchOverlap, dofiledrop, dropfile, memory] = parseInputs(varargin)
+function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(varargin)
 
     patchOverlap = {'sliding'};
     if isodd(nargin)
@@ -191,9 +188,18 @@ function [patchOverlap, dofiledrop, dropfile, memory] = parseInputs(varargin)
         varargin = varargin(2:end);
     end
     
+    % default memory usage.
+    defmem = -1;
+    if ispc
+        [~, sys] = memory();
+        defmem = sys.PhysicalMemory.Available/5;
+        defmem
+    end
+    
     p = inputParser();
     p.addParameter('savefile', '', @ischar);
-    p.addParameter('memory', -1, @isscalar);
+    p.addParameter('memory', defmem, @isscalar);
+    p.addParameter('procfun', @(x) x, @(x) isa(x, 'function_handle'));
     p.parse(varargin{:});
     
     dofiledrop = ~isempty(p.Results.savefile);
@@ -202,9 +208,10 @@ function [patchOverlap, dofiledrop, dropfile, memory] = parseInputs(varargin)
          dropfile = matfile(p.Results.savefile, 'Writable', true);
     end
     
-    memory = {};
+    mem = {};
     if p.Results.memory > 0
-        memory = {p.Results.memory};
+        mem = {p.Results.memory};
     end
     
+    procfun = p.Results.procfun;
 end
