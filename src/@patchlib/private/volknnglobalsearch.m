@@ -17,7 +17,6 @@ function [pIdx, pRefIdxs, pDst] = volknnglobalsearch(src, refs, varargin)
        
     % do knn search for elements in mask.
     mask = src.mask(src.grididx);
-    whos refslib
     [pIdxm, pDstm] = knnsearch(refslib, src.lib(mask, :), varargin{:});
     pRefIdxsm = refsidx(pIdxm);
     pRefIdxsm = reshape(pRefIdxsm, size(pIdxm)); % necessary if size(pIdxm, 1) == 1;
@@ -39,3 +38,6 @@ function [pIdx, pRefIdxs, pDst] = volknnglobalsearch(src, refs, varargin)
         pIdx(pRefIdxs == i) = pIdx(pRefIdxs == i) - sum(sizes(1:i-1));
     end
 end
+
+
+
