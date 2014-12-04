@@ -22,7 +22,7 @@ classdef patchlib < handle
     
     properties (Constant)
         default2DpatchSize = [5, 5];
-
+        memory = 8000000000;
     end
     
     methods (Static)
