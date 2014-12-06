@@ -75,7 +75,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     
     % compute the actual library
     if ~dofiledrop
-        library = memlib(vol, patchSize, cropVolSize, initsub, shift, procfun);
+        library = memlib(vol, cropVolSize, initsub, shift, procfun);
         libsize = size(library);
         outlib = library;
     else
@@ -98,28 +98,20 @@ function varargout = vol2lib(vol, patchSize, varargin)
     varargout = outputs(1:nargout); 
 end
 
-function library = memlib(vol, patchSize, cropVolSize, initsub, shift, procfun)
-% compute library in memory
 
-    % initialize library of subscripts into the volume
-    nDims = ndims(vol);
-    nGridVoxels = numel(initsub{1});
-    sub = cell(nDims, 1);
-    sub(:) = {zeros(nGridVoxels, prod(patchSize), 'uint32')};
-   
+function library = memlib(vol, cropVolSize, initsub, shift, procfun)
+% compute library in memory
+    
     % update subscript library
-    for dim = 1:nDims
-        sub{dim} = bsxfun(@plus, initsub{dim}(:), shift(:, dim)') - 1;
-        sub{dim} = sub{dim}(:);
-    end
+    shiftfn = @(x, y) bsxfun(@plus, x(:), y) - 1;
+    sub = cellfunc(shiftfn, initsub, dimsplit(1, shift')');
     
     % compute the library of linear indexes into the volume
-    idxvec = sub2ind(cropVolSize, sub{:});
+    idxvec = sub2indfast(cropVolSize, sub{:});
     clear sub;
 
     % compute final library
-    library = vol(idxvec(:));
-    library = reshape(library, [nGridVoxels, prod(patchSize)]);
+    library = vol(idxvec);
     library = procfun(library);
 end
 
@@ -134,23 +126,32 @@ function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun,
     if nargin <= 7
         memRows = ceil(numel(vol) ./ prod(patchSize));
     else
-        rowMemory = prod(patchSize) * 8;    
+        % w = whos('vol'); b = w.bytes ./ numel(vol);
+        b = 4; % since using uint32 for the sub.
+        rowMemory = prod(patchSize) * b;
         memRows = max(floor(memory ./ rowMemory), 1);
     end
 
-    for i = 1:memRows:nGridVoxels
-        range = i:min(i + memRows - 1, nGridVoxels);
-        tmpsub = cellfunc(@(x) x(range), initsub);
-        library = memlib(vol, patchSize, cropVolSize, tmpsub, shift, procfun);
+    if memRows >= nGridVoxels
+        % avoid the loop if can do all in memory
+        dropfile.lib = memlib(vol, cropVolSize, initsub, shift, procfun);
         
-        if i == 1
-            % pre-allocation inside matlab file
-            % dropfile.lib(nGridVoxels, 1:prod(patchSize)) = volclassfn(0); 
-            dropfile.lib(nGridVoxels, 1:size(library, 2)) = volclassfn(0); 
+    else
+        
+        for i = 1:memRows:nGridVoxels
+            range = i:min(i + memRows - 1, nGridVoxels);
+            tmpsub = cellfunc(@(x) x(range), initsub);
+            library = memlib(vol, cropVolSize, tmpsub, shift, procfun);
+
+            if i == 1
+                % pre-allocation inside matlab file
+                % dropfile.lib(nGridVoxels, 1:prod(patchSize)) = volclassfn(0);
+                dropfile.lib(nGridVoxels, 1:size(library, 2)) = volclassfn(0);
+            end
+
+            % todo specify cols?
+            dropfile.lib(range, 1:size(library, 2)) = library;
         end
-        
-        % todo specify cols?
-        dropfile.lib(range, 1:size(library, 2)) = library;
     end
 end
 
@@ -193,14 +194,20 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(vararg
     if ispc
         [~, sys] = memory();
         defmem = sys.PhysicalMemory.Available/5;
-        defmem
     end
     
+    % parse rest of inputs
     p = inputParser();
     p.addParameter('savefile', '', @ischar);
     p.addParameter('memory', defmem, @isscalar);
+    p.addParameter('verbose', false, @islogical);
     p.addParameter('procfun', @(x) x, @(x) isa(x, 'function_handle'));
     p.parse(varargin{:});
+    
+    % display memory message
+    if p.Results.verbose
+        fprintf('Default memory:%f, passed memory: %f\n', defmem, p.Results.memory);
+    end
     
     dofiledrop = ~isempty(p.Results.savefile);
     dropfile = [];
