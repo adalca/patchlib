@@ -16,6 +16,8 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %
 %   Note: vol2lib will cut the volume to fit the right number of patches.
 %
+%     TODO: add Param/Value documentation.
+%
 %   [lib, idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
 %   point of every patch in the *original* volume, and the size of the volumes size, which is
 %   smaller than or equal to the size of vol. It will be smaller than the initial volume if the
@@ -58,12 +60,18 @@ function varargout = vol2lib(vol, patchSize, varargin)
     end
     
     % inputs
-    [patchOverlap, dofiledrop, dropfile, memory, procfun] = parseInputs(varargin{:});
+    [patchOverlap, dofiledrop, dropfile, memory, procfun, forcefull] = parseInputs(varargin{:});
     nDims = ndims(vol);
     volSize = size(vol);
     
     % get the index and subscript of the initial grid
     [grididx, cropVolSize, gridSize] = patchlib.grid(volSize, patchSize, patchOverlap{:}); 
+    if forcefull
+        varargout = cell(nargout, 1);
+        [varargout{:}] = forcelib(vol, patchSize, varargin{:});
+        return;
+    end
+    
     initsub = cell(1, nDims);
     [initsub{:}] = ind2sub(volSize, grididx);
     vol = cropVolume(vol, cropVolSize);
@@ -98,6 +106,44 @@ function varargout = vol2lib(vol, patchSize, varargin)
     varargout = outputs(1:nargout); 
 end
 
+function varargout = forcelib(vol, patchSize, varargin)
+% TODO: there might be a slightly more efficient way to do this using math. 
+% see gridsize() with 
+
+    % get logical vol
+    logvol = true(size(vol));
+    logvol = padarray(logvol, patchSize - 1, 'post');
+    
+    % get sub of large vol within logvol
+    patchOverlap = parseInputs(varargin{:});
+    idx = patchlib.grid(size(logvol), patchSize, patchOverlap{:}); 
+    subvec = ind2subvec(size(logvol), idx(:));
+    keeplog = logvol(idx(:));
+    
+    % compute new volume size
+    newVolSize = max(subvec(keeplog, :), [], 1) + patchSize - 1;
+    assert(all(newVolSize >= size(vol)));
+    assert(all(newVolSize <= size(logvol)));
+    
+    % compute the minimal necessary logical volume
+    logvol = cropVolume(logvol, ones(1, ndims(vol)), newVolSize);
+    newvol = nan(size(logvol));
+    newvol(logvol) = vol;
+    
+    % run vol2lib with a bigger volume
+    f = find(strcmp('forcefull', varargin)); varargin{f+1} = false;
+    varargout = cell(1, nargout);
+    [varargout{:}] = patchlib.vol2lib(newvol, patchSize, varargin{:});
+    
+    % recompute  outputs
+    assert(nargout <= 4);
+    if nargout >= 2
+        varargout{2} = ind2ind(newVolSize, size(vol), varargout{2});
+    end
+    if nargout >= 3
+        assert(all(varargout{3} == newVolSize));
+    end
+end
 
 function library = memlib(vol, cropVolSize, initsub, shift, procfun)
 % compute library in memory
@@ -181,7 +227,7 @@ function varargout = vol2libcell(vol, patchSize, varargin)
     end
 end        
 
-function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(varargin)
+function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseInputs(varargin)
 
     patchOverlap = {'sliding'};
     if isodd(nargin)
@@ -193,7 +239,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(vararg
     defmem = -1;
     if ispc
         [~, sys] = memory();
-        defmem = sys.PhysicalMemory.Available/5;
+        defmem = sys.PhysicalMemory.Available/10;
     end
     
     % parse rest of inputs
@@ -201,6 +247,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(vararg
     p.addParameter('savefile', '', @ischar);
     p.addParameter('memory', defmem, @isscalar);
     p.addParameter('verbose', false, @islogical);
+    p.addParameter('forcefull', false, @islogical);
     p.addParameter('procfun', @(x) x, @(x) isa(x, 'function_handle'));
     p.parse(varargin{:});
     
@@ -221,4 +268,5 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun] = parseInputs(vararg
     end
     
     procfun = p.Results.procfun;
+    forcefull = p.Results.forcefull;
 end
