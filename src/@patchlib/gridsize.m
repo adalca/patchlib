@@ -1,28 +1,28 @@
 function [gsize, newVolSize, overlap] = gridsize(volSize, patchSize, varargin)
-% PATCHCOUNT number of patches that fit into a volume
-%   gsize = patchcount(volSize, patchSize) compute the number of patches that fit
+% GRIDSIZE number of patches that fit into a volume
+%   gsize = gridsize(volSize, patchSize) compute the number of patches that fit
 %       into volSize given a particular patchSize. patchSize should be the same length as volSize.
 %       By default, the patches are assumed to be sliding - that is, patches will have an overlap of
 %       (patchSize - 1). See below for specifying patch overlaps.
 %
 %       To get spacing between non-overlapping patches, enter negative overlaps.
 %
-%	gsize = patchcount(volSize, patchSize, patchOverlap) The volume will be cropped to
+%	gsize = gridsize(volSize, patchSize, patchOverlap) The volume will be cropped to
 %       the maximum size that fits the patch grid. For example, a [6x6] volume with a patchsize of
 %       [3x3] and overlap of 1 will be cropped to [5x5] volume. Overlap should be < patchSize.
 %       patchOverlap should be a scalar (applied to all dim) or the same length as patchSize.
 %
-%   idx = patchcount(volSize, patchSize, kind) allow specification of how the overlap between
+%   idx = gridsize(volSize, patchSize, kind) allow specification of how the overlap between
 %       patches: a scalar, vector (of size [1xnDims]) or a string for a pre-specified configuration,
 %       like 'sliding', 'discrete', or 'mrf'. see patchlib.overlapkind for details of the supported
 %       overlap kinds. If not specified (i.e. function has only 2 inputs), default overlap is
 %       'sliding'.
 %
-%   idx = patchcount(..., patchOverlap/kind, startSub) - start the indexing at a particular location
+%   idx = gridsize(..., patchOverlap/kind, startSub) - start the indexing at a particular location
 %       [1 x nDims]. This essentially means that the volume will be cropped starting at that
 %       location. e.g. if startSub is [2, 2], then only vol(2:end, 2:end) will be included.
 %
-%   [..., newVolSize, overlap] = patchcount(...) returns the size of the cropped volume and the size
+%   [..., newVolSize, overlap] = gridsize(...) returns the size of the cropped volume and the size
 %       of the overlap. The latter is useful is the 'kind' input was used.
 %
 % See Also: grid
