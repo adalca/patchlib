@@ -123,7 +123,7 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
         refs = inputs.libfn(refvolscell, patchSize, refoverlap{:});
     end
 
-    if ~isempty(inputs.location)
+    if ~isempty(inputs.location) && any(inputs.location ~= 0);
         % TODO: add nDim location support.
         [src, refs] = addlocation(src, refs, inputs.location);
     end
