@@ -28,40 +28,54 @@ function vol = quilt(patches, gridSize, varargin)
     [patches, gridSize, patchSize, patchOverlap, inputs] = ...
         parseinputs(patches, gridSize, varargin{:});
 
-    % aggregate patches if necessary accross NN 
+    % aggregate patches (if necessary) accross NN 
     if ~isempty(inputs.nnAggregator)
+        
+        % if given NN weights
         if ~isempty(inputs.nnWeights)
+            
+            % if given a function handle, then compute weights
             if isa(inputs.nnWeights, 'function_handle')
                 inputs.nnWeights = inputs.nnWeights(patches);
             end
+            
+            % if the weights are given as a matrix that matches N x K 
+            %   assume that we need to transform this into the size of patches, N x V x K
             if ismatrix(inputs.nnWeights) && ...
                     all(size(inputs.nnWeights) == [size(patches, 1), size(patches, 3)]);
                 wshape = [size(inputs.nnWeights, 1), 1, size(inputs.nnWeights, 2)];
                 inputs.nnWeights = reshape(inputs.nnWeights, wshape);
                 inputs.nnWeights = repmat(inputs.nnWeights, [1, prod(patchSize), 1]);
             end
+            
+            % crop to maxK
+            inputs.nnWeights = inputs.nnWeights(:,:,1:inputs.maxK);
+            
+            % aggregate patches.
             patches = inputs.nnAggregator(patches, inputs.nnWeights);
         else
+            
+            
             patches = inputs.nnAggregator(patches);
         end
     end
     
-    % get the votes;
-    varargout = cell(1);
-    if isempty(inputs.weights) && isempty(inputs.nweights)
-        varargout = {};
-    end
+    % get the votes by stacking patches.
+    varargout = ifelse(isempty(inputs.weights) && isempty(inputs.nweights), {}, cell(1));
     [votes, varargout{:}] = patchlib.stackPatches(patches, patchSize, gridSize, patchOverlap{:});
-
+    
     % use aggregateVotes to vote for the best outcome and get the quiltedIm
     weights = {};
     if ~isempty(inputs.weights) || ~isempty(inputs.nweights)
+        
         % TODO - allow computation of weights via weights function (patches);
         if isa(inputs.weights, 'function_handle')
-            weights = inputs.weights(votes, patches);
+            weights = inputs.weights(votes, patches, inputs.nnWeights);
+            
         else
             % extract weights
             w = ifelse(~isempty(inputs.weights), inputs.weights, inputs.nweights);
+            w = w(:, :, 1:min(inputs.maxK, size(w, 3)));
             assert(all(size(w) == size(patches)));
             
             % layer the weights according to layer structure.
@@ -107,13 +121,17 @@ function [patches, gridSize, patchSize, patchOverlap, inputs] = ...
     p = inputParser();
     p.addParameter('voteAggregator', @defaultVoteAggregator, @(x) isa(x, 'function_handle'));
     p.addParameter('nnAggregator', @defaultNNAggregator, @(x) isa(x, 'function_handle'));
+    p.addParameter('maxK', size(patches, 3), @isscalar);
     p.addParameter('nnWeights', {});
-    p.addParameter('weights', {}, @isnumeric); % provide weights. Will normalize to add to 1 accross layers
+    p.addParameter('weights', {}, @(x) isnumeric(x) || isfunc(x)); % provide weights. Will normalize to add to 1 accross layers
     p.addParameter('nweights', {}, @isnumeric); % weights already normalized in a specific way
     p.parse(varargin{:});
     inputs = p.Results;
     assert(isempty(inputs.weights) || isempty(inputs.nweights), ...
         'only weights or nweights should be provided');
+    
+    % crop the patches
+    patches = patches(:,:,1:inputs.maxK);
     
 end
 
@@ -127,9 +145,18 @@ end
 
 function z = defaultAggregator(dim, varargin)
     if numel(varargin) == 1
-        z = nanmean(varargin{1}, dim);
+        if any(isnan(varargin{1}(:)))
+            z = nanmean(varargin{1}, dim);
+        else
+            z = mean(varargin{1}, dim);
+        end
     else
-        z = nanwmean(varargin{1}, varargin{2}, dim);
+        if any(isnan(varargin{1}(:))) || any(isnan(varargin{2}(:)))        
+            % only use if nans exist, since nanwmean is more memory intensive
+            z = nanwmean(varargin{1}, varargin{2}, dim); 
+        else
+            z = wmean(varargin{1}, varargin{2}, dim);
+        end
     end
 end
         
