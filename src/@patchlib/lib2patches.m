@@ -30,14 +30,19 @@ function patches = lib2patches(lib, pIdx, varargin)
     K = size(pIdx, 2);
     
     % create the patches
-    tmppatches = zeros([numel(pIdx), prod(patchSize)]);
+    
     for i = 1:numel(lib)
-        i
+        fprintf('lib2patches: lib %d of %d\n', i, numel(lib));
         tlib = lib{i};
         if ~isempty(libfn)
             tlib = libfn(tlib, patchSize);
             assert(size(tlib, 2) == prod(patchSize), ...
                 'library size %d does not match patch voxels %d', size(tlib, 2), prod(patchSize));
+        end
+        
+        if i == 1
+            libclass = class(tlib);
+            tmppatches = zeros([numel(pIdx), prod(patchSize)], libclass);
         end
         
         libmap = lIdx(:) == i;
