@@ -239,7 +239,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     defmem = -1;
     if ispc
         [~, sys] = memory();
-        defmem = sys.PhysicalMemory.Available/10;
+        defmem = sys.PhysicalMemory.Available/7;
     end
     
     % parse rest of inputs
