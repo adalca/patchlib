@@ -1,4 +1,4 @@
-function [votes, pIdx, locIdx, idx] = locvotes(loc, patches, grididx, patchSize, volSize)
+function [votes, pIdx, locIdx, idx, Ksub] = locvotes(loc, patches, grididx, patchSize, volSize)
 % VOTEIDX votes given volume location
 %   votes = locvotes(loc, patches, grididx, patchSize, volSize) patch votes for a given volume
 %   location loc inside a volume of size volSize, patches are the resulting patches from a knnsearch
@@ -11,6 +11,10 @@ function [votes, pIdx, locIdx, idx] = locvotes(loc, patches, grididx, patchSize,
 %   and locIdx is the index of the locations used for those patches. Note that all K votes are
 %   returned for each of these. idx is the final index computed from pIdx and locIdx and considering
 %   all K entries --- that is, votes = patches(idx);
+%
+%   Warning: do not use this to look over many voxels, it is slow for that purpose! If you need to
+%   do that, do a vol2lib call of an index volume (i.e. reshape(1:prod(volSize), volSize)). see
+%   rowquilt().
 %
 %   Note: numel(grididx) == N, prod(patchSize) = P.
 %
@@ -41,6 +45,7 @@ function [votes, pIdx, locIdx, idx] = locvotes(loc, patches, grididx, patchSize,
         idx = sub2ind(size(patches), pIdxSub(:), locIdxSub(:), Ksub(:));
     else
         idx = [];
+        Ksub = [];
     end
     
     assert(numel(idx) == numel(pIdx) * size(patches, 3));
