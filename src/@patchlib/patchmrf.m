@@ -195,7 +195,8 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     
     % get patch overlap
     if ~exist('patchOverlap', 'var')
-        patchOverlap = 'mrf';
+        patchOverlap = 'sliding';
+        warning('Using Default sliding overlap');
     end  
     if ischar(patchOverlap)
         patchOverlap = patchlib.overlapkind(patchOverlap, patchSize);
