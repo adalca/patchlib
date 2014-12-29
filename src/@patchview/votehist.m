@@ -37,7 +37,7 @@ function votehist(vol, patches, grididx, patchSize, varargin)
     imagesc(slice); colormap gray;
     
     % prepare histogram axes and count
-    minmax = [min(slice(:)), max(slice(:))];
+    minmax = double([min(slice(:)), max(slice(:))]);
     N = 0;
     rect = zeros(1, 4);
         
@@ -53,7 +53,8 @@ function votehist(vol, patches, grididx, patchSize, varargin)
             y = round(y);
 
             % get votes for this location
-            votes = patchlib.locvotes([y, x, sliceNr], size(vol), patches, grididx, patchSize);
+            votes = patchlib.locvotes([y, x, sliceNr], patches, grididx, patchSize, size(vol));
+            votes = double(votes);
             
             % if no votes for this area
             if isempty(votes)
