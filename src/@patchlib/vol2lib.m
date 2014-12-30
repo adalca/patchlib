@@ -16,9 +16,29 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %
 %   Note: vol2lib will cut the volume to fit the right number of patches.
 %
-%     TODO: add Param/Value documentation.
+%   lib = vol2lib(..., Param, Value, ...) allows for the following param/value specifications:
+%   - 'savefile': filename.mat - allows for partial computations with parital save/load to the given
+%       filename.mat. This is an ideal option for huge libraries that don't (or barely do) fit in
+%       memory --- the function will work with matfile() to dynamically read or write parts of the
+%       necessariy variables to disc. Instead of returning the library lib, vol2lib will return a
+%       matfile pointer, libfile. At this point, typing libfile.lib will load the library into
+%       memory. Since you probably had memory constraints, you may want to load the library in
+%       parts, just as libfile.lib(1, :), etc.
 %
-%   [lib, idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
+%   - 'memory': specify the memory in bytes if using savefile (memory-based) mode. We recommend this
+%       value to be no more than about a fifth of your current available memory. On PC, the default
+%       is a tenth of the available physical memory. On other systems, no default is available.
+%   
+%   - 'procfun': a function to allow to process the (potentially partial) library in memory. This is
+%       useful for when using file based library construction, and you only want, for example, to 
+%       keep part of the library before writing it to file.
+%
+%   - 'verbose': true/false - verbosity.
+%
+%   - 'forcefull': force a library of the entire volume (i.e. do not crop the volume) - this means 
+%       some of the patches might have NANs towards the end of the volume. 
+%
+%   [..., idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
 %   point of every patch in the *original* volume, and the size of the volumes size, which is
 %   smaller than or equal to the size of vol. It will be smaller than the initial volume if the
 %   volume had to be cropped. Also returns the number of patches gridSize.
@@ -26,14 +46,6 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %   [..., libIdx] = vol2lib(...) only given a cell of vols, returns a cell array with each entry
 %   being a column vector with the same number of rows as library, indicating the volume index (i.e.
 %   1..numel(vols))
-%
-%   [libfile, idx, libVolSize, gridSize] = vol2lib(..., 'savefile', 'filename.mat') allows for
-%   partial computations with parital save/load to the savefile filename.mat. This is an idea option
-%   for huge libraries that don't (or barely do) fit in memory --- the function will work with
-%   matfile() to dynamically read or write parts of the necessariy variables to disc. Instead of
-%   returning library, a matfile pointer, libfile, will be returned. At this point, typing
-%   libfile.lib will load the library into memory. Since you probably had memory constraints,
-%   you may want to load the library in parts, just as libfile.lib(1, :), etc.
 %
 %   Current Algorithm:
 %       Initiate by getting a first 'grid' of the top left index of every patch
@@ -107,6 +119,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
 end
 
 function varargout = forcelib(vol, patchSize, varargin)
+% force full library construction, including edge patches that might only be partially in the volume
 % TODO: there might be a slightly more efficient way to do this using math. 
 % see gridsize() with 
 
@@ -147,6 +160,7 @@ end
 
 function library = memlib(vol, cropVolSize, initsub, shift, procfun)
 % compute library in memory
+% TODO - is there a fast mex-based way to do this?
     
     % update subscript library
     shiftfn = @(x, y) bsxfun(@plus, x(:), y) - 1;
@@ -183,7 +197,6 @@ function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun,
         dropfile.lib = memlib(vol, cropVolSize, initsub, shift, procfun);
         
     else
-        
         for i = 1:memRows:nGridVoxels
             range = i:min(i + memRows - 1, nGridVoxels);
             tmpsub = cellfunc(@(x) x(range), initsub);
@@ -239,7 +252,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     defmem = -1;
     if ispc
         [~, sys] = memory();
-        defmem = sys.PhysicalMemory.Available/7;
+        defmem = sys.PhysicalMemory.Available/10;
     end
     
     % parse rest of inputs
@@ -260,6 +273,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     dropfile = [];
     if dofiledrop
          dropfile = matfile(p.Results.savefile, 'Writable', true);
+         assert(p.Results.memory > 0, 'Need positive memory value. Detected: %f', p.Results.memory);
     end
     
     mem = {};
