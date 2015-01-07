@@ -7,6 +7,8 @@ Please do a recursive pull, as the git has git submodules [mgt](https://github.c
 - See [`functions`](src/functions.md) for a list of functions in this library.
 - See [`examples`](examples/examples.md) for a list of examples to get you started.
 
+To use any of the MRF related methods, please download the external library [UGM by Mark Schmidt](http://www.cs.ubc.ca/~schmidtm/Software/UGM.html)
+
 Contributors
 ------------
 Adrian Dalca ([web](http://adalca.mit.edu) | [email](mailto:adalca@mit.edu))  
