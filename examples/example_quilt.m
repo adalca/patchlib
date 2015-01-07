@@ -56,11 +56,11 @@ function example_quilt(varargin)
     if ismember(2, exids)
         % perform a knn search for mrf patches in imgs.noisy by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'mrf', 'K', 10);
-        ims{1} = pl.quilt(patches, gridSize, 'mrf');
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'half', 'K', 10);
+        ims{1} = pl.quilt(patches, gridSize, 'half');
         titles{1} = sprintf('mrf grid, mean(mean) %3.2f', nanssd(ims{1}(:), imgs.orig(:)));
         
-        ims{2} = pl.quilt(patches, gridSize, 'mrf', 'nnWeights', exp(-pDst));
+        ims{2} = pl.quilt(patches, gridSize, 'half', 'nnWeights', exp(-pDst));
         titles{2} = sprintf('mrf grid, mean(wmean) %3.2f', nanssd(ims{2}(:), imgs.orig(:)));
         
         % draw
@@ -73,20 +73,20 @@ function example_quilt(varargin)
     if ismember(3, exids)
         % perform a knn search for mrf patches in imgs.noisy by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'mrf', 'K', 10);
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'half', 'K', 10);
         
         % TODO: combine the next 3 mini blocks into patchmrf...
         [qpatches, bel, ~] = pl.patchmrf(patches, gridSize, pDst);
         
         % quilt bland
-        ims{1} = pl.quilt(qpatches, gridSize, 'mrf');
+        ims{1} = pl.quilt(qpatches, gridSize, 'half');
         titles{1} = sprintf('mrf grid, mean(lbp) %3.2f', nanssd(ims{1}(:), imgs.orig(:)));
         
         % quilt with weights
         gaussFilt = fspecial('gaussian', patchSize);
         w1 = repmat(gaussFilt(:)', [size(qpatches, 1), 1]);
         w2 = repmat(max(bel.nodeBel, [], 2), [1, size(w1, 2)]);
-        ims{2} = pl.quilt(qpatches, gridSize, 'mrf', 'weights', w1 .* w2);
+        ims{2} = pl.quilt(qpatches, gridSize, 'half', 'weights', w1 .* w2);
         titles{2} = sprintf('mrf grid, wmean(lbp) %3.2f', nanssd(ims{2}(:), imgs.orig(:)));
         
         % draw
@@ -99,21 +99,21 @@ function example_quilt(varargin)
     if ismember(4, exids)
         % perform a knn search for local mrf patches in imgs.noisy by using im as reference.
         % extract patches in a [gridSize x V] matrix, where V == prod(patchSize)
-        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'mrf', ...
+        [patches, pDst, ~, ~, gridSize] = pl.volknnsearch(imgs.noisy, imgs.orig, patchSize, 'half', ...
             'local', 3, 'K', 10);
         
         % TODO: combine the next 3 mini blocks into patchmrf...
         [qpatches, bel] = pl.patchmrf(patches, gridSize, pDst);
         
         % quilt bland
-        ims{1} = pl.quilt(qpatches, gridSize, 'mrf');
+        ims{1} = pl.quilt(qpatches, gridSize, 'half');
         titles{1} = sprintf('mrf grid, local, mean(lbp) %3.2f', nanssd(ims{1}(:), imgs.orig(:)));
         
         % quilt with weights
         gaussFilt = fspecial('gaussian', patchSize);
         w1 = repmat(gaussFilt(:)', [size(qpatches, 1), 1]);
         w2 = repmat(max(bel.nodeBel, [], 2), [1, size(w1, 2)]);
-        ims{2} = pl.quilt(qpatches, gridSize, 'mrf', 'weights', w1 .* w2);
+        ims{2} = pl.quilt(qpatches, gridSize, 'half', 'weights', w1 .* w2);
         titles{2} = sprintf('mrf grid, local, wmean(lbp) %3.2f', nanssd(ims{2}(:), imgs.orig(:)));
         
         % draw
