@@ -4,7 +4,7 @@ function overlap = overlapkind(str, patchSize)
 %       given patchSize:
 %       'sliding' refers to a sliding window, giving an overlap of patchSize - 1 
 %       'discrete' refers to discrete patches, so the overlap is 0 
-%       'mrf' assumes an overlap of floor((patchSize - 1)/2) (e.g. 2 on [5x5] patch)
+%       'half' assumes an overlap of floor((patchSize - 1)/2) (e.g. 2 on [5x5] patch)
 %
 %   kind = overlapstring(patchOverlap, patchSize) overlap kind from an overlap amount, using the
 %       correpondances above. If the overlap amount doesn't fit one of the corresponding counts,
@@ -18,7 +18,7 @@ function overlap = overlapkind(str, patchSize)
 
     if ischar(str)
         switch str
-            case 'mrf'
+            case 'half'
                 overlap = floor((patchSize - 1)/2);
             case 'sliding'
                 overlap = patchSize - 1;
@@ -29,7 +29,7 @@ function overlap = overlapkind(str, patchSize)
         end
     else
         if all(str == floor((patchSize - 1)/2))
-            overlap = 'mrf';
+            overlap = 'half';
         elseif all(str == (patchSize - 1))
             overlap = 'sliding';
         elseif all(str == 0)
