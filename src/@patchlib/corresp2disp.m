@@ -9,7 +9,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
 %
 %   sub = corresp2disp(srcsiz, refsiz, pIdx, rIdx) 
 %
-%   sub = corresp2disp(..., 'reshape') reshape each sub vector to siz
+%   sub = corresp2disp(..., 'reshape', logical) reshape each sub vector to siz
 %
 %   [sub, loc, corresp] = corresp2disp(...)
 %

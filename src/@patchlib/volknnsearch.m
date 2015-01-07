@@ -145,7 +145,7 @@ end
 function src = prepsrc(srcvol, patchSize, inputs, varargin)
     
     if isstruct(srcvol) && isfield(srcvol, 'lib'); 
-        warning('doing src trick');
+        % warning('doing src trick');
         src = srcvol;
     else
         src = inputs.libfn(srcvol, patchSize, varargin{:});
