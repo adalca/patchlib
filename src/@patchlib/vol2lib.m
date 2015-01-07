@@ -11,7 +11,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %
 %   lib = vol2lib(vol, patchSize, overlap) allow specification of how the overlap between patches: a
 %   scalar, vector (of size [1xnDims]) or a string for a pre-specified configuration, like
-%   'sliding', 'discrete', or 'mrf'. see patchlib.overlapkind for details of the supported overlap
+%   'sliding', 'discrete', or 'half'. see patchlib.overlapkind for details of the supported overlap
 %   kinds. If not specified (i.e. function has only 2 inputs), default overlap is 'sliding'.
 %
 %   Note: vol2lib will cut the volume to fit the right number of patches.
