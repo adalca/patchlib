@@ -8,7 +8,7 @@ function volSize = grid2volSize(gridSize, patchSize, varargin)
 %     amount of patch overlap.
 % 
 %     volSize = grid2volSize(gridSize, patchSize, kind) allows for pre-specified kind of overlaps:
-%     like 'sliding', 'discrete', or 'mrf'. see patchlib.overlapkind for details of the supported
+%     like 'sliding', 'discrete', or 'half'. see patchlib.overlapkind for details of the supported
 %     overlap kinds. If not specified (i.e. function has only 2 inputs), default overlap is
 %     'sliding'.
 %

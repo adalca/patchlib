@@ -14,7 +14,7 @@ function [gsize, newVolSize, overlap] = gridsize(volSize, patchSize, varargin)
 %
 %   idx = gridsize(volSize, patchSize, kind) allow specification of how the overlap between
 %       patches: a scalar, vector (of size [1xnDims]) or a string for a pre-specified configuration,
-%       like 'sliding', 'discrete', or 'mrf'. see patchlib.overlapkind for details of the supported
+%       like 'sliding', 'discrete', or 'half'. see patchlib.overlapkind for details of the supported
 %       overlap kinds. If not specified (i.e. function has only 2 inputs), default overlap is
 %       'sliding'.
 %
