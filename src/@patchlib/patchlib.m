@@ -53,6 +53,10 @@ classdef patchlib < handle
         isv = isvalidoverlap(overlap);
         [sub, loc, corresp] = corresp2disp(siz, varargin);
         [votes, pIdx, locIdx, idx, Ksub] = locvotes(loc, patches, grididx, patchSize, volSize);
+        
+        [curIdx, neighborIdx] = overlapRegions(patchSize, varargin);
+        precomp = overlapRegionsPrecomp(patchSize, patchOverlap)
+        dst = overlapDistance(patches1, patches2, df21, varargin)
     end
     
     methods (Static, Access = private)
