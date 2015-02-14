@@ -11,7 +11,12 @@ addpath(genpath(datapath));
 
 % verify
 assert(sys.isfile('example_patchmrf.m'), 'example path not added');
-assert(sys.isfile('UGM_Infer_LBP'), ...
-    'Could not find UGM. Please download at %s, run UGM''s mexAll, and add to matlab path.', ...
+if ~sys.isfile('UGM_Infer_LBP')
+    warning('Could not find UGM. Please download at %s, run UGM''s mexAll, and add to matlab path.', ...
     'http://www.cs.ubc.ca/~schmidtm/Software/UGM.html');
+end
 disp('patchmrf verification complete');
+
+% mex files
+privdir = fullfile(datapath, 'src', '+patchlib', 'private');
+mex(fullfile(privdir, 'mexMemlib.cpp'), '-outdir', fullfile(privdir));

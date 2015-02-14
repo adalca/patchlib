@@ -160,18 +160,33 @@ end
 
 function library = memlib(vol, cropVolSize, initsub, shift, procfun)
 % compute library in memory
+%   vol - the volume
+%   cropVolSize - size of vol.
+%   initsub - the initial (top left) location of each patch (nDims cell with each entry being the size of grididx)
+%   shift - prod(patchSize) x nDims
 % TODO - is there a fast mex-based way to do this?
     
-    % update subscript library
-    shiftfn = @(x, y) bsxfun(@plus, x(:), y) - 1;
-    sub = cellfunc(shiftfn, initsub, dimsplit(1, shift')');
-    
-    % compute the library of linear indexes into the volume
-    idxvec = sub2indfast(cropVolSize, sub{:});
-    clear sub;
+    useMex = true;
 
-    % compute final library
-    library = vol(idxvec);
+    % Old Method
+    if ~useMex
+        % update subscript library
+        shiftfn = @(x, y) bsxfun(@plus, x(:), y) - 1;
+        sub = cellfunc(shiftfn, initsub, dimsplit(1, shift')');
+        % compute the library of linear indexes into the volume
+        idxvec = sub2indfast(cropVolSize, sub{:});
+        clear sub;
+        % compute final library
+        library = vol(idxvec);
+    
+    % new mex method
+    else
+        library = mexMemlib(vol, cropVolSize, initsub, shift);
+    
+        % check outputs
+%         assert(all(library(:) == library2(:)))
+    end
+    
     library = procfun(library);
 end
 
@@ -252,7 +267,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     defmem = -1;
     if ispc
         [~, sys] = memory();
-        defmem = sys.PhysicalMemory.Available/10;
+        defmem = sys.PhysicalMemory.Available/3;
     end
     
     % parse rest of inputs
