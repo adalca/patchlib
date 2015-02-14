@@ -12,15 +12,14 @@
 /**
 * Compute library in memory
 */
-mxArray* vol2memlib(const mxArray* inVol, const mxArray* inCropVolSize, 
-        const mxArray* inInitsub, const mxArray* inShift) {
+mxArray* vol2memlib(const mxArray* inVol, const mxArray* inInitsub, const mxArray* inShift) {
     
     int i, j, d; // counters
     int idx, multdims;
     
     // get useful factors and pointers
     const double* vol = mxGetPr(inVol);
-    const double* cropVolSize = mxGetPr(inCropVolSize);
+    const mwSize* cropVolSize = mxGetDimensions(inVol);
     const double* shift = mxGetPr(inShift);
     size_t M = mxGetM(inShift);
     size_t nPatches = mxGetNumberOfElements(mxGetCell(inInitsub, 0));
@@ -52,7 +51,7 @@ mxArray* vol2memlib(const mxArray* inVol, const mxArray* inCropVolSize,
             idx = (long) (initsub[0][i]-1 + offset[0]-1); // initial index for dimention 0
             multdims = 1;
             for (d = 1; d < nDims; d++) {
-                multdims *= (int) cropVolSize[d - 1];
+                multdims *= (double) cropVolSize[d - 1];
                 idx += (long) (initsub[d][i]-1 + (*(offset+d*M))-1) * multdims;
             }
             
@@ -70,6 +69,6 @@ mxArray* vol2memlib(const mxArray* inVol, const mxArray* inCropVolSize,
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	
     /* todo - checking */
-	plhs[0] = vol2memlib(prhs[0], prhs[1], prhs[2], prhs[3]); 
+	plhs[0] = vol2memlib(prhs[0], prhs[1], prhs[2]); 
 }
 

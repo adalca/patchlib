@@ -95,11 +95,11 @@ function varargout = vol2lib(vol, patchSize, varargin)
     
     % compute the actual library
     if ~dofiledrop
-        library = memlib(vol, cropVolSize, initsub, shift, procfun);
+        library = memlib(vol, initsub, shift, procfun);
         libsize = size(library);
         outlib = library;
     else
-        filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun, memory{:});
+        filelib(vol, patchSize, initsub, shift, dropfile, procfun, memory{:});
         dropfile.grididx = grididx(:);
         dropfile.cropVolSize = cropVolSize;
         dropfile.gridSize = gridSize;
@@ -158,30 +158,32 @@ function varargout = forcelib(vol, patchSize, varargin)
     end
 end
 
-function library = memlib(vol, cropVolSize, initsub, shift, procfun)
+function library = memlib(vol, initsub, shift, procfun)
 % compute library in memory
 %   vol - the volume
-%   cropVolSize - size of vol.
 %   initsub - the initial (top left) location of each patch (nDims cell with each entry being the size of grididx)
 %   shift - prod(patchSize) x nDims
-% TODO - is there a fast mex-based way to do this?
-    
-    useMex = true;
+%   procfun - a function to process the library, plib = procfun(lib)
+
+    % use mex if needed
+    useMex = numel(which('mexMemlaib')) > 0;
 
     % Old Method
     if ~useMex
         % update subscript library
         shiftfn = @(x, y) bsxfun(@plus, x(:), y) - 1;
         sub = cellfunc(shiftfn, initsub, dimsplit(1, shift')');
+        
         % compute the library of linear indexes into the volume
-        idxvec = sub2indfast(cropVolSize, sub{:});
+        idxvec = sub2indfast(size(vol), sub{:});
         clear sub;
+        
         % compute final library
         library = vol(idxvec);
     
     % new mex method
     else
-        library = mexMemlib(vol, cropVolSize, initsub, shift);
+        library = mexMemlib(vol, initsub, shift);
     
         % check outputs
 %         assert(all(library(:) == library2(:)))
@@ -191,7 +193,7 @@ function library = memlib(vol, cropVolSize, initsub, shift, procfun)
 end
 
 
-function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun, memory)
+function filelib(vol, patchSize, initsub, shift, dropfile, procfun, memory)
 % compute library by writing a bit at a time to file
 
     volclass = class(vol);
@@ -209,13 +211,13 @@ function filelib(vol, patchSize, cropVolSize, initsub, shift, dropfile, procfun,
 
     if memRows >= nGridVoxels
         % avoid the loop if can do all in memory
-        dropfile.lib = memlib(vol, cropVolSize, initsub, shift, procfun);
+        dropfile.lib = memlib(vol, initsub, shift, procfun);
         
     else
         for i = 1:memRows:nGridVoxels
             range = i:min(i + memRows - 1, nGridVoxels);
             tmpsub = cellfunc(@(x) x(range), initsub);
-            library = memlib(vol, cropVolSize, tmpsub, shift, procfun);
+            library = memlib(vol, tmpsub, shift, procfun);
 
             if i == 1
                 % pre-allocation inside matlab file
