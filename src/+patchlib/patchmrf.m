@@ -216,7 +216,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('refgridsize', [], @(x) isnumeric(x) || iscell(x));
     p.addParameter('gridIdx', 1:prod(gridSize), @isnumeric);
     p.addParameter('srcSize', [], @isnumeric);
-    p.addParameter('connectivity', numel(gridSize)^3-1, @isnumeric);
+    p.addParameter('connectivity', 3^numel(gridSize)-1, @isnumeric);
     p.parse(paramvalues{:})
     inputs = p.Results;
     
