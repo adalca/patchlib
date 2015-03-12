@@ -48,7 +48,8 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
     
     
     subvec = ind2subvec(siz, srcgrididx(:));
-    loc = num2cell(subvec, [1, numel(siz)]);
+    loc = dimsplit(2, subvec);
+%     loc = num2cell(subvec, [1, numel(siz)]);
 %     loc = size2ndgrid(siz);
 %     loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
     
