@@ -23,7 +23,7 @@ function overlap = overlapkind(str, patchSize)
             case 'sliding'
                 overlap = patchSize - 1;
             case 'discrete'
-                overlap = 0;
+                overlap = patchSize * 0;
             otherwise
                 error('Unknown overlap method: %s', str);
         end
