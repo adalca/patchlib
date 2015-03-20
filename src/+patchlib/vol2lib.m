@@ -165,8 +165,10 @@ function library = memlib(vol, initsub, shift, procfun)
 %   shift - prod(patchSize) x nDims
 %   procfun - a function to process the library, plib = procfun(lib)
 
-    % use mex if needed
-    useMex = numel(which('mexMemlaib')) > 0;
+    % use mex if needed. 
+    % This will only be detected from withint vol2lib since it's currently
+    % private to +patchlib
+    useMex = numel(which('mexMemlib')) > 0;
 
     % Old Method
     if ~useMex
