@@ -6,15 +6,28 @@ A powerful library for working with N-D patches (currently very much in developm
 - See [`functions`](src/functions.md) for a list of functions in this library.
 - See [`examples`](examples/examples.md) for a list of examples to get you started.
 
-Dependencies
-------------
-All of the code depends on two other (easy to download) matlab toolboxes. Please download these and add them to your matlab path (via `addpath(genpath(PATH_TO_TOOLBOX))`).
+
+Installation
+-------
+
+#### Set up code
+Do a git pull or download patchlib as a zip. Unzip the files, and add the folder to your MATLAB path:  
+`>> addpath(genpath('PATH_TO_PATCHLIB'));`
+
+Then run setup script:  
+``>> verifypatchlib.m;`
+
+#### Dependencies
+You'll need some dependencies, based on which code you want to run. Add each toolbox to your MATLAB path.
+
+The following two toolboxes are required by all of the code:
 - [mgt](https://github.com/adalca/mgt)
 - [mvit](https://github.com/adalca/mivt)
 
-To use any of the MRF related methods, please download the 
-- [UGM library by Mark Schmidt](http://www.cs.ubc.ca/~schmidtm/Software/UGM.html) 
-and add it to your matlab path
+The MRF-related methods (e.g. for spatial regularization):
+- [UGM library by Mark Schmidt](http://www.cs.ubc.ca/~schmidtm/Software/UGM.html)
+
+
 
 Contributors
 ------------
