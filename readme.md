@@ -1,7 +1,7 @@
 patchlib
 ========
 
-A powerful library for working with N-D patches, currently very much in development.
+A powerful library for working with N-D patches (currently very much in development). The libraryalso includes several 2D and 3D examples to illustrate the library applicability.
 
 - See [`functions`](src/functions.md) for a list of functions in this library.
 - See [`examples`](examples/examples.md) for a list of examples to get you started.
