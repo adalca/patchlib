@@ -34,6 +34,7 @@ Helpers
 - [`patchlib.isvalidoverlap`](+patchlib/isvalidoverlap.m) check overlap variable
 - [`patchlib.grid2volSize`](+patchlib/grid2volSize.m) volume size from patch grid size
 - [`patchlib.corresp2disp`](+patchlib/corresp2disp.m) transform locations to displacement.
+- [`patchlib.interpDisp`](+patchlib/interpDisp.m) interpolate displacement.
 - [`patchlib.patchesmat2cell`](+patchlib/patchesmat2cell.m)
 - [`patchlib.l2overlapdst`](+patchlib/l2overlapdst.m)
 - [`patchlib.lib2patches`](+patchlib/lib2patches.m) (still in draft mode)
