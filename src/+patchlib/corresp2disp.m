@@ -1,15 +1,15 @@
-function [sub, loc, corresp] = corresp2disp(siz, varargin)
-% CORRESP2DISP transform reference locations to displacement.
-%   sub = corresp2disp(srcsiz, insub) with insub as nDim cell, with each entry being a Nx1 vector
+function [disp, loc, corresp] = corresp2disp(siz, varargin)
+% CORRESP2DISP transform reference locations to relative displacement.
+%   disp = corresp2disp(srcsiz, insub) with insub as nDim cell, with each entry being a Nx1 vector
 %       with N = prod(srcsiz), or a srcsiz vector, indicating for each source voxel, where the
 %       correspondance is into the reference. 
 %   
-%   sub = corresp2disp(srcsiz, refsiz, pIdx) reference idx has to be NxM where N = prod(srcsiz), M 
+%   disp = corresp2disp(srcsiz, refsiz, pIdx) reference idx has to be NxM where N = prod(srcsiz), M 
 %       can be anything >= 1. sub is then a cell array with entries NxM
 %
-%   sub = corresp2disp(srcsiz, refsiz, pIdx, rIdx) 
+%   disp = corresp2disp(srcsiz, refsiz, pIdx, rIdx) 
 %
-%   sub = corresp2disp(..., 'reshape', logical) reshape each sub vector to siz
+%   disp = corresp2disp(..., 'reshape', logical) reshape each sub vector to siz
 %
 %   [sub, loc, corresp] = corresp2disp(...)
 %
@@ -28,6 +28,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
 %   subplot(1,2,2); imagesc(reshape(sub1{1}, srcSize));
 %
 % TODO: warning: is this dealing with non-full overlaps properly? Not Sure. 
+% TODO: this function needs cleaning up. So clean it up. :)
     warning('for now, refgrididx is assumed to be ''sliding''');
 
     f = find(cellfun(@ischar, varargin), 1);
@@ -49,9 +50,6 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
     
     subvec = ind2subvec(siz, srcgrididx(:));
     loc = dimsplit(2, subvec);
-%     loc = num2cell(subvec, [1, numel(siz)]);
-%     loc = size2ndgrid(siz);
-%     loc = cellfun(@(x) x(:), loc, 'UniformOutput', false);
     
     % 
     if numel(varargin) == 2 || numel(varargin) == 3
@@ -63,7 +61,7 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
         pIdx = varargin{2};
         rIdx = ifelse(numel(varargin) == 2, 'ones(size(pIdx))', 'varargin{3}', true);
         
-        corresp = cellfun(@(x) zeros(size(pIdx)), cell(1, numel(siz)), 'UniformOutput', false);
+        corresp = cellfunc(@(x) zeros(size(pIdx)), cell(size(loc)));
         
         assert(numel(refsize) >= max(rIdx(:)), 'not enough reference sizes have been passed');
         for i = 1:numel(refsize)
@@ -82,18 +80,21 @@ function [sub, loc, corresp] = corresp2disp(siz, varargin)
         corresp = varargin{1};
     end
         
-    sub = cellfun(@join, corresp, loc, 'UniformOutput', false);
+    disp = cellfun(@join, corresp, loc, 'UniformOutput', false);
     
     if doreshape 
         %assumes srcgrididx is in the sight format
         resiz = size(srcgrididx);
-        sub = cellfun(@(x) reshape(x, resiz), sub, 'UniformOutput', false);
+        disp = cellfun(@(x) reshape(x, resiz), disp, 'UniformOutput', false);
         corresp = cellfun(@(x) reshape(x, resiz), corresp, 'UniformOutput', false);
         loc = cellfun(@(x) reshape(x, resiz), loc, 'UniformOutput', false);
     end
+    
+    % TOADD: allow to re-interpolate based on given volume size, patch size, and patch overlap? or
+    % separate function?
 end
 
 function j = join(x, y)
-    assert(size(x, 1) == size(y, 1));
+    assert(size(x, 1) == size(y, 1), 'join sizes are different: %d, %d', size(x, 1), size(y, 1));
     j = bsxfun(@minus, x, y);
 end
