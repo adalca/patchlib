@@ -36,6 +36,10 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
 %     - 'mask' logical mask the size of the source vol, volknnsearch will only run for voxels where
 %       mask is true
 %
+%     - 'fillK' logical. If true: when searching in a local window, the window might be too small
+%     for K, especially in volume corner/edges. true fillK will fill up K NN and assign them a
+%     distance infinity and location and reference indexes of 1.
+%
 %     - 'libfn' (function handle).
 %           if you want to use your own library construction method, the signature is:
 %           >> libstruct = libfn(inputvol, patchSize, patchOverlap)
@@ -73,29 +77,27 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
     [refvolscell, srcoverlap, refoverlap, knnvarargin, inputs] = ...
         parseinputs(refvols, patchSize, varargin{:});
     
+    
+    
     % if processing references separately
     nRefs = numel(refvolscell); % guaranteed refvolscell is a cell.
     if inputs.separateProc == 1 && nRefs > 1
         vargout = cell(nRefs, 1);
         
         % exclude patches in this mode. Will build the patches at the end, if necessary.
-        f = find(strcmp('excludePatches', varargin));
-        if ~isempty(f) 
-            varargin{f + 1} = true;
-        else
-            varargin{end + 1} = 'excludePatches';
-            varargin{end + 1} = true;
-        end
+        varargin = setParamValue('excludePatches', true, varargin);
         
         % do the search
         srcpass = prepsrc(srcvol, patchSize, inputs, srcoverlap{:});
-        
         for i = 1:nRefs
 			if inputs.verbose, reftic = tic; end
             vargout{i} = cell(6, 1);
             [vargout{i}{:}] = patchlib.volknnsearch(srcpass, refvols{i}, patchSize, varargin{:});
-            vargout{i}{1} = [];
-            if inputs.verbose, fprintf('volknnsearch with reference %d: %3.2f\n', i, toc(reftic)); end
+            vargout{i}{1} = []; % empty out patches
+            
+            if inputs.verbose, 
+                fprintf('volknnsearch with reference %d: %3.2f\n', i, toc(reftic)); 
+            end
         end
         
         % combine the results
@@ -114,38 +116,46 @@ function [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
         return
     end
     
+    
+    
     % compute source library
     src = prepsrc(srcvol, patchSize, inputs, srcoverlap{:});
     assert(size(src.lib, 1) > 0, 'Source library is empty');
     
-    % build reference the libraries
+    % build the reference libraries
     if inputs.buildreflibs
         refs = inputs.libfn(refvolscell, patchSize, refoverlap{:});
+    else
+        for i = 1:nRefs, refs(i) = refvolscell{i}; end
     end
-
+    
     if ~isempty(inputs.location) && any(inputs.location ~= 0);
         % TODO: add nDim location support.
         [src, refs] = addlocation(src, refs, inputs.location);
     end
 
-    % compute
+    % compute the search
     [pIdx, pRefIdxs, pDst] = inputs.searchfn(src, refs, knnvarargin{:});
     srcgridsize = src.gridSize;
-
+    
     % extract the patches
     if inputs.excludePatches
         patches = [];
     else
         patches = getpatches(src, refs, patchSize, pIdx, pRefIdxs);
     end
-
+    
     refgridsize = refs(1).gridSize;    
+    
+%     % call knnsearch
+%     [patches, pDst, pIdx, pRefIdxs, srcgridsize, refgridsize] = ...
+%             patchlib.knnsearch(srcvol, refvols, patchSize, varargin);
 end
 
 function src = prepsrc(srcvol, patchSize, inputs, varargin)
-    
+% prepare library and mask
+
     if isstruct(srcvol) && isfield(srcvol, 'lib'); 
-        % warning('doing src trick');
         src = srcvol;
     else
         src = inputs.libfn(srcvol, patchSize, varargin{:});
@@ -170,7 +180,8 @@ function patches = getpatches(src, refs, patchSize, pIdx, pRefIdxs, varargin)
     % TODO - unsure. if mask is *very* small compared to the volume, might need to work in
     % sparse? but then, most other functions need to worry about memory as well.
     if sum(~mask(:)) > 0
-        patches = maskvox2vol(pm, mask, @sparse);
+        % patches = maskvox2vol(pm, mask, @sparse);
+        patches = maskvox2vol(pm, mask);
     else
         patches = pm;
     end
@@ -208,7 +219,7 @@ function volstruct = vol2libwrap(vol, patchSize, varargin)
 end
 
 
-function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, patchSize, varargin)
+function [refs, srcoverlap, refoverlap, knnvarargin, inputs] = parseinputs(refs, patchSize, varargin)
 % getPatchFunction (2dLocation_in_src, ref), 
 % method for extracting the actual stuff - this can probably be put with getPatchFunction. 
 % pre-sel voxels?
@@ -241,9 +252,12 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, p
     p.addParameter('separateProcAgg', 'agg', @(x) validatestring(x, 'agg', 'sep')); % see help
     p.addParameter('libfn', @vol2libwrap, @(x) isa(x, 'function_handle'));
     p.addParameter('verbose', false, @islogical);
+    p.addParameter('fillK', false, @islogical);
+    p.addParameter('tmpfolder', '', @islogical);
+    p.addParameter('memory', -1, @islogical);
     p.KeepUnmatched = true;
     p.parse(varargin{:});
-    knnvargin = struct2cellWithNames(p.Unmatched);
+    knnvarargin = struct2cellWithNames(p.Unmatched);
     inputs = p.Results; 
     
     % make sure refs is a cell
@@ -254,7 +268,7 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, p
     
     % default global search
     if isempty(inputs.local) && isempty(inputs.searchfn)
-        assert(inputs.buildreflibs)
+%         assert(inputs.buildreflibs)
         inputs.searchfn = @volknnglobalsearch;
     end
     
@@ -264,10 +278,15 @@ function [refs, srcoverlap, refoverlap, knnvargin, inputs] = parseinputs(refs, p
         assert(isnumeric(inputs.local));
         assert(isempty(inputs.searchfn), 'Only provide local spacing or search function, not both');
         if isscalar(inputs.local), inputs.local = inputs.local * ones(1, nDims); end
-        inputs.searchfn = @(x, y, varargin) volknnlocalsearch(x, y, inputs.local, varargin{:});
+        inputs.searchfn = @(x, y, varargin) volknnlocalsearch(x, y, inputs.local, inputs.fillK, varargin{:});
     end    
     
     if isscalar(inputs.location)
         inputs.location = repmat(inputs.location, [1, nDims]);
+    end
+    
+    if ~isempty(inputs.tmpfolder)
+        assert(sys.isdir(inputs.tmpfolder));
+        assert(inputs.memory > 0);
     end
 end

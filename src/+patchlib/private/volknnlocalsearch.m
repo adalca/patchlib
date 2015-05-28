@@ -1,4 +1,4 @@
-function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin)
+function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, fillK, varargin)
 % volknnlocalsearch. private function for volknnsearch.
 % perform a local search, with <spacing> around each voxel in each ref included in the search for
 % knn for that voxel.
@@ -13,12 +13,12 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin
     refsubs = cellfunc(fn, {refs(:).vol}', {refs(:).grididx}');
     [refs.subs] = refsubs{:};
     assert(size(refs(1).subs, 1) == numel(refs(1).grididx));
-
+    
     % get the linear indexes grididx from full volume space to gridSize
     % problem: gridSize ir misleading since it doesn't start at [1,1,1]. 
     fn = @(x, s) subvec2ind(x, bsxfun(@minus, s + 1, s(1, :)));
     ridx = cellfunc(fn, {refs(:).gridSize}', refsubs); 
-    
+
     % get subscript local ranges for each voxel. 
     % Pre-computation should save time inside the main for-loop
     srcgridsub = ind2subvec(size(src.vol), src.grididx(:));
@@ -34,100 +34,98 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, varargin
     pIdx = nan(size(src.lib, 1), K);
     pRefIdxs = nan(size(src.lib, 1), K);
     pDst = nan(size(src.lib, 1), K);
-    subset = find(src.mask(src.grididx))';
     
     % if there is a user specified distance, do local refine.
     % otherwise, globalrefine is actually probably faster due to the mex implementation.
+    % TODO - move this to options...
     f = find(strcmp('Distance', varargin));
-    if numel(f) > 0 && ~ischar(varargin{f+1})
-        method = 'localrefine'; 
-    else
-        method = 'globalrefine';
+    DO_LOCAL = numel(f) > 0 && ~ischar(varargin{f+1});
+        
+    if ~DO_LOCAL % first computes *all* the distances.
+        % compute all of the pairwise distances
+        tmp_dst = pdist2withParamValue(src, refs, varargin{:});
     end
     
-    switch method
-        case 'localrefine'
-            for i = subset(:)' %1:size(src.lib, 1)
-                
-                % compute the reference linear idx and reference number for the regions around this
-                % voxel
-                ridxwindow = cell(nRefs, 1);
-                ipatches = cell(nRefs, 1);
-                refIdx = cell(nRefs, 1);
-                for r = 1:nRefs
-                    idxsel = bsxfun(@ge, refs(r).subs, mingridsub(i, :)) & ...
-                        bsxfun(@le, refs(r).subs, maxgridsub{r}(i, :));
-                    ridxwindow{r} = ridx{r}(all(idxsel, 2));
-                    ridxwindow{r} = ridxwindow{r}(:);    
+    subset = find(src.mask(src.grididx))';
+    for i = subset(:)' %1:size(src.lib, 1)
+        
+        % get the location linear index and reference index for the windows around voxel i.
+        [gidxsall, riall, wIdx] = winRefIdx(refs, ridx, mingridsub, maxgridsub, i);
+        if fillK % fill K if necessary.
+            pIdx(i, :) = 1;
+            pDst(i, :) = inf;
+            pRefIdxs(i, :) = 1;
+        else
+            assert(size(gidxsall, 1) >= K, ...
+                'Spacing does not allow %d nearest neighbours (%d)', K, size(gidxsall, 1));
+        end
+        
+        if DO_LOCAL
+            % extract the relevant patches from the references.
+            ipatches = arrayfunc(@(r) refs(r).lib(wIdx{r}, :), 1:nRefs);
+            ipatchesall = cat(1, ipatches{:});
 
-                    rlib = refs(r).lib;
-                    ipatches{r} = rlib(ridxwindow{r}, :);
-                    refIdx{r} = r * ones(size(ridxwindow{r}));
-                end
-                gidxsall = cat(1, ridxwindow{:});    
-                ipatchesall = cat(1, ipatches{:});
-                riall = cat(1, refIdx{:});
-                assert(size(gidxsall, 1) >= K, 'Spacing does not allow %d nearest neighbours', K);
-
-                [p, d] = knnsearch(ipatchesall, src.lib(i, :), varargin{:});
-
-                pIdx(i, :) = gidxsall(p);
-                pDst(i, :) = d; 
-                pRefIdxs(i, :) = riall(p);
-            end
+            % do a nearest neighbor search among the patches extract from the window
+            [p, d] = knnsearch(ipatchesall, src.lib(i, :), varargin{:});
             
-        case 'globalrefine' % first computes *all* the distances.
+        else
+            % get an overall index into the (loc-in-reference, ref-nr) ordering used
+            tmp_gidxsall = varsub2ind(cellfun(@(x) size(x, 1), {refs.lib}), gidxsall, riall);
             
-            % erase K from varargin
-            if numel(fK) == 1
-                varargin(fK:fK+1) = [];
-            end
-            
-            % get all the tmp_d. This is requivalent to 
-            % >> tmp_d = pdist2(src.lib, cat(1, refs.lib), varargin{:}); or
-            % >> tmp_d = pdist2mex(src.lib',cat(1, refs.lib{:})','euc',[],[],[]);
-            % but allows for specifying knnsearch param/value pairs in varargin
-            [tmp_idx, tmp_d] = knnsearch(cat(1, refs.lib), src.lib, 'K', inf, varargin{:});
-            
-            [~, si] = sort(tmp_idx, 2, 'ascend');
-            for i = 1:size(tmp_d, 1), tmp_d(i, :) = tmp_d(i, si(i, :)); end
-            
-            % go through each local search.
-            for i = subset(:)'
-                
-                % compute the reference linear idx and reference number for the regions around this
-                % voxel
-                ridxwindow = cell(nRefs, 1);
-                refIdx = cell(nRefs, 1);
-                for r = 1:nRefs
-                    idxsel = bsxfun(@ge, refs(r).subs, mingridsub(i, :)) & ...
-                        bsxfun(@le, refs(r).subs, maxgridsub{r}(i, :));
-                    ridxwindow{r} = ridx{r}(all(idxsel, 2));
-                    ridxwindow{r} = ridxwindow{r}(:);
-                    refIdx{r} = r * ones(size(ridxwindow{r}));
-                end
-                gidxsall = cat(1, ridxwindow{:});
-                riall = cat(1, refIdx{:});
-                assert(size(gidxsall, 1) >= K, ...
-                    'Spacing does not allow %d nearest neighbours (%d)', K, size(gidxsall, 1));
-                
-                tmp_gidxsall = pr2idx(gidxsall, riall, cellfun(@(x) size(x, 1), {refs.lib}));
-                [tmp_d2, tmp_di] = sort(tmp_d(i, tmp_gidxsall), 'ascend');
-                pIdx(i, :) = gidxsall(tmp_di(1:K))';
-                pDst(i, :) = tmp_d2(1:K);
-                pRefIdxs(i, :) = riall(tmp_di(1:K))';
-            end
-            
-        otherwise
-            error('Internal method not found. Blame Adrian');
+            % for location i, sort the pre-computed distances and take out the first K components
+            [tmp_d2, tmp_di] = sort(tmp_dst(i, tmp_gidxsall), 'ascend');
+            p = tmp_di(1:min(K, numel(tmp_di)));
+            d = tmp_d2(1:min(K, numel(tmp_d2)));
+        end
+        
+        % note we don't use 1:K, instead we use 1:numel(p) since we might allow less than K matches
+        pIdx(i, 1:numel(p)) = gidxsall(p);
+        pDst(i, 1:numel(p)) = d;
+        pRefIdxs(i, 1:numel(p)) = riall(p);
     end
-   
 end
 
-function idx = pr2idx(pIdx, rIdx, refSizes)
-    idx = pIdx * 0;
-    for i = 1:numel(refSizes)
-        idx(rIdx == i) = pIdx(rIdx == i) + sum(refSizes(1:i-1));
-    end 
+function dst = pdist2withParamValue(src, refs, varargin)
+% get all the tmp_d. This is equivalent to 
+% >> tmp_d = pdist2(src.lib, cat(1, refs.lib), varargin{:}); or
+% >> tmp_d = pdist2mex(src.lib',cat(1, refs.lib{:})','euc',[],[],[]);
+% but allows for specifying knnsearch param/value pairs in varargin, which we want to keep.
+    
+    % erase K from varargin
+    fK = find(strcmp('K', varargin), 1, 'first');
+    if numel(fK) == 1
+        varargin(fK:fK+1) = [];
+    end
+    [idx, dst] = knnsearch(cat(1, refs.lib), src.lib, 'K', inf, varargin{:});
+
+    [~, si] = sort(idx, 2, 'ascend');
+    for i = 1:size(dst, 1), dst(i, :) = dst(i, si(i, :)); end
 end
 
+function [gidxsall, riall, wIdx, refIdx] = winRefIdx(refs, ridx, mingridsub, maxgridsub, i)
+% get the location linear index and reference index for the windows around point i.
+
+    % extract the number of references
+    nRefs = numel(refs);
+
+    wIdx = cell(nRefs, 1);
+    for r = 1:nRefs
+        % get all the subs used in this reference.
+        locsub = refs(r).subs;
+        
+        % get the indexes of within a window of i
+        % these will be mingridsub_i <= locsub <= maxgridsub{r}_i
+        wIdxsel = bsxfun(@ge, locsub, mingridsub(i, :)) & bsxfun(@le, locsub, maxgridsub{r}(i, :));
+        wIdxsel = all(wIdxsel, 2);
+        
+        % put all the neighbor indexes into a cell
+        wIdx{r} = ridx{r}(wIdxsel(:));
+    end
+    
+    % combine all of the window indexes and reference indexes
+    gidxsall = cat(1, wIdx{:});
+    
+    % also set up a reference index vector to match
+    refIdx = arrayfunc(@(r) r*ones(size(wIdx{r})), 1:nRefs);
+    riall = cat(1, refIdx{:});
+end
