@@ -25,9 +25,9 @@ function [idx, newVolSize, gridsize, overlap] = grid(volSize, patchSize, varargi
 %     x nDims]. This essentially means that the volume will be cropped starting at that location.
 %     e.g. if startSub is [2, 2], then only vol(2:end, 2:end) will be included.
 % 
-%     sub = grid(..., patchOverlap/kind, 'sub') return n-D subscripts instead of linear index. sub
-%     will be a 1 x nDim cell. This is equivalent to [sub{:}] = ind2sub(volSize, idx), but is done
-%     faster inside this function.
+%     sub = grid(..., patchOverlap/kind, ..., 'sub') return n-D subscripts instead of linear index.
+%     sub will be a 1 x nDim cell. This is equivalent to [sub{:}] = ind2sub(volSize, idx), but is
+%     done faster inside this function.
 % 
 %     [..., newVolSize, nPatches, overlap] = grid(...) returns the size of the cropped volume, the
 %     number of patches in each direction, and the size of the overlap. The latter is useful is the
@@ -94,18 +94,20 @@ function [patchOverlap, startDel, retsub] = parseinputs(volSize, patchSize, vara
     end
     assert(all(patchSize > patchOverlap));
     
-    retsub = false;
+    % startDel
+    
     if nargin <= 3 || ischar(varargin{2})
         startDel = ones(size(patchSize));
-    elseif nargin == 4 && ~ischar(varargin{2})
+    else
         startDel = varargin{2};
     end
     
+    retsub = false;
     if (nargin == 4 && ischar(varargin{2})) || (nargin == 5)
-        if nargin == 4 && ischar(startDel)
-            assert(strcmp(startDel, 'sub'), 'Char last character must be ''sub''');
-        else
+        if nargin == 4 && ischar(varargin{2})
             assert(strcmp(varargin{2}, 'sub'), 'Char last character must be ''sub''');
+        else
+            assert(strcmp(varargin{3}, 'sub'), 'Char last character must be ''sub''');
         end
         retsub = true; 
     end
