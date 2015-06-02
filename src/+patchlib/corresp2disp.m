@@ -80,14 +80,14 @@ function [disp, loc, corresp] = corresp2disp(siz, varargin)
         corresp = varargin{1};
     end
         
-    disp = cellfun(@join, corresp, loc, 'UniformOutput', false);
+    disp = cellfunc(@join, corresp, loc);
     
     if doreshape 
         %assumes srcgrididx is in the sight format
         resiz = size(srcgrididx);
-        disp = cellfun(@(x) reshape(x, resiz), disp, 'UniformOutput', false);
-        corresp = cellfun(@(x) reshape(x, resiz), corresp, 'UniformOutput', false);
-        loc = cellfun(@(x) reshape(x, resiz), loc, 'UniformOutput', false);
+        disp = cellfunc(@(x) reshape(x, resiz), disp);
+        corresp = cellfunc(@(x) reshape(x, resiz), corresp);
+        loc = cellfunc(@(x) reshape(x, resiz), loc);
     end
     
     % TOADD: allow to re-interpolate based on given volume size, patch size, and patch overlap? or
