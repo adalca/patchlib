@@ -1,14 +1,15 @@
-function disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, shift)
+function disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, startDel)
 %INTERPDISP interpolate displacements given on a grid
 %   disp2 = interpDisp(disp, patchSize, patchOverlap, volSize)
-%   disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, shift)
+%   disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, startDel) startDel should be
+%       (patchsize + 1) / 2 in most cases, e.g. to get the centers
 %
 %   TODO: allow for 
 %   disp2 = interpDisp(disp, idxsub)
 
     % get subscripts
     if exist('shift', 'var')
-        [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, shift, 'sub');
+        [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, startDel, 'sub');
     else
         [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, 'sub');
     end
