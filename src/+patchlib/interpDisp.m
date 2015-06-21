@@ -14,7 +14,7 @@ function disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, startDel)
         [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, 'sub');
     end
     assert(all(size(idxsub{1}) == size(disp{1})));
-    assert(all(size(idxsub{1}) == gridsize));
+    assert((prod(gridsize) == 1 && numel(idxsub{1})) || all(size(idxsub{1}) == gridsize));
     
     
     % get the interpolated displacements. 
