@@ -8,7 +8,7 @@ function disp2 = interpDisp(disp, patchSize, patchOverlap, volSize, startDel)
 %   disp2 = interpDisp(disp, idxsub)
 
     % get subscripts
-    if exist('shift', 'var')
+    if exist('startDel', 'var')
         [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, startDel, 'sub');
     else
         [idxsub, ~, gridsize] = patchlib.grid(volSize, patchSize, patchOverlap, 'sub');
