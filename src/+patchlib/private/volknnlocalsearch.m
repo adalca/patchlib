@@ -83,6 +83,7 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, fillK, v
         pDst(i, 1:numel(p)) = d;
         pRefIdxs(i, 1:numel(p)) = riall(p);
     end
+    assert(~any(isnan(pDst(:)))); % cannot use isclean since inf is fine.
 end
 
 function dst = pdist2withParamValue(src, refs, varargin)
@@ -99,7 +100,9 @@ function dst = pdist2withParamValue(src, refs, varargin)
     [idx, dst] = knnsearch(cat(1, refs.lib), src.lib, 'K', inf, varargin{:});
 
     [~, si] = sort(idx, 2, 'ascend');
-    for i = 1:size(dst, 1), dst(i, :) = dst(i, si(i, :)); end
+    for i = 1:size(dst, 1), 
+        dst(i, :) = dst(i, si(i, :)); 
+    end
 end
 
 function [gidxsall, riall, wIdx, refIdx] = winRefIdx(refs, ridx, mingridsub, maxgridsub, i)
