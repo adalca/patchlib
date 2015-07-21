@@ -185,7 +185,10 @@ function library = memlib(vol, initsub, shift, procfun)
     
     % new mex method
     else
+        islog = islogical(vol);
+        if islog, vol = vol * 1; end
         library = mexMemlib(vol, initsub, shift);
+        if islog, library = logical(library); end
     
         % check outputs
 %         assert(all(library(:) == library2(:)))
