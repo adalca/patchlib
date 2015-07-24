@@ -187,14 +187,12 @@ function library = memlib(vol, initsub, shift, procfun)
     else
         islog = islogical(vol);
         if islog, vol = vol * 1; end
-        assert(isnumeric(vol));
+        assert(isfloat(vol), 'Currently, mex implementation only accepts class double');
         library = mexMemlib(vol, initsub, shift);
         if islog, library = logical(library); end
         
-        
-    
         % check outputs
-%         assert(all(library(:) == library2(:)))
+    %         assert(all(library(:) == library2(:)))
     end
     
     library = procfun(library);
