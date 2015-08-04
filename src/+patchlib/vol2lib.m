@@ -273,10 +273,12 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     
     % default memory usage.
     defmem = -1;
-    if ispc
-        [~, sys] = memory();
-        defmem = sys.PhysicalMemory.Available/3;
-    end
+    % TODO: unfortunately this is slow. memory() call is 0.1 seconds, which is a problem if doing
+    % many calls.
+    %     if ispc
+    %         [~, sys] = memory();
+    %         defmem = sys.PhysicalMemory.Available/3;
+    %     end
     
     % parse rest of inputs
     p = inputParser();
