@@ -1,5 +1,5 @@
 function varargout = stackPatches(patches, patchSize, gridSize, varargin)
-% STACKPATCHES stack patches in layer structure
+% STACKPATCHES stack (gridded) patches in layer structure
 %   layers = stackPatches(patches, patchSize, gridSize) stack given patches in a layer structure.
 %   patches is [N x V x K], with patches(i, :, 1:K) indicates K patch candidates at location i (e.g.
 %   the result of a 3-nearest neightbours search). patchSize and gridSize are vectors, V =
