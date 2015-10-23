@@ -35,7 +35,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %
 %   - 'verbose': true/false - verbosity.
 %
-%   - 'forcefull': force a library of the entire volume (i.e. do not crop the volume) - this means 
+%   - 'fulllib': force a library of the entire volume (i.e. do not crop the volume) - this means 
 %       some of the patches might have NANs towards the end of the volume. 
 %
 %   [..., idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
@@ -80,7 +80,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     [grididx, cropVolSize, gridSize] = patchlib.grid(volSize, patchSize, patchOverlap{:}); 
     if forcefull
         varargout = cell(nargout, 1);
-        [varargout{:}] = forcelib(vol, patchSize, varargin{:});
+        [varargout{:}] = fulllib(vol, patchSize, varargin{:});
         return;
     end
     
@@ -118,7 +118,7 @@ function varargout = vol2lib(vol, patchSize, varargin)
     varargout = outputs(1:nargout); 
 end
 
-function varargout = forcelib(vol, patchSize, varargin)
+function varargout = fulllib(vol, patchSize, varargin)
 % force full library construction, including edge patches that might only be partially in the volume
 % TODO: there might be a slightly more efficient way to do this using math. 
 % see gridsize() with 
@@ -144,7 +144,7 @@ function varargout = forcelib(vol, patchSize, varargin)
     newvol(logvol) = vol;
     
     % run vol2lib with a bigger volume
-    f = find(strcmp('forcefull', varargin)); varargin{f+1} = false;
+    f = find(strcmp('fulllib', varargin)); varargin{f+1} = false;
     varargout = cell(1, nargout);
     [varargout{:}] = patchlib.vol2lib(newvol, patchSize, varargin{:});
     
@@ -285,7 +285,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     p.addParameter('savefile', '', @ischar);
     p.addParameter('memory', defmem, @isscalar);
     p.addParameter('verbose', false, @islogical);
-    p.addParameter('forcefull', false, @islogical);
+    p.addParameter('fulllib', false, @islogical);
     p.addParameter('procfun', @(x) x, @(x) isa(x, 'function_handle'));
     p.parse(varargin{:});
     
@@ -307,5 +307,5 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     end
     
     procfun = p.Results.procfun;
-    forcefull = p.Results.forcefull;
+    forcefull = p.Results.fulllib;
 end
