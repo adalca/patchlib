@@ -38,6 +38,11 @@ function varargout = vol2lib(vol, patchSize, varargin)
 %   - 'fulllib': force a library of the entire volume (i.e. do not crop the volume) - this means 
 %       some of the patches might have NANs towards the end of the volume. 
 %
+%   - 'locations': specify particular desired patches by giving the location of the top-left corner
+%       of the patches in the volumes. If this is specified, vol2lib will *only* return the specific
+%       patches. This can be significantly faster than building the entire library if only specific
+%       patches are desired. locations must be a [nDesiredPatches x nDims].
+%
 %   [..., idx, libVolSize, gridSize] = vol2lib(...) returns the index of the starting (top-left)
 %   point of every patch in the *original* volume, and the size of the volumes size, which is
 %   smaller than or equal to the size of vol. It will be smaller than the initial volume if the
@@ -71,51 +76,90 @@ function varargout = vol2lib(vol, patchSize, varargin)
         return
     end
     
-    % inputs
-    [patchOverlap, dofiledrop, dropfile, memory, procfun, forcefull] = parseInputs(varargin{:});
+    % input checking
+    narginchk(2, inf);
+    [patchOverlap, opt] = parseInputs(vol, patchSize, varargin{:});
     nDims = ndims(vol);
     volSize = size(vol);
     
-    % get the index and subscript of the initial grid
-    [grididx, cropVolSize, gridSize] = patchlib.grid(volSize, patchSize, patchOverlap{:}); 
-    if forcefull
+    % if we force a full library construction, this is a slightly different execution
+    if opt.fulllib
         varargout = cell(nargout, 1);
         [varargout{:}] = fulllib(vol, patchSize, varargin{:});
         return;
     end
-    
-    initsub = cell(1, nDims);
-    [initsub{:}] = ind2sub(volSize, grididx);
-    vol = cropVolume(vol, cropVolSize);
-    
-    % get all of the shifts in a [prod(patchSize) x nDims] subscript matrix
-    shift = cell(1, nDims);
-    [shift{:}] = ind2sub(patchSize, (1:prod(patchSize))');
-    shift = [shift{:}];
-    
-    % compute the actual library
-    if ~dofiledrop
-        library = memlib(vol, initsub, shift, procfun);
-        libsize = size(library);
-        outlib = library;
+
+    % see if we need to build the entire library or not
+    manyLocations = size(opt.locations, 1) > (numel(vol) / 10) && prod(patchSize) < 1332;
+    buildWholeLib = isempty(opt.locations) || manyLocations;
+    if ~buildWholeLib
+        [outlib, grididx] = vol2liblocations(vol, patchSize, opt.locations);
+        gridSize = NaN;
+        cropVolSize = size(vol);
+        
     else
-        filelib(vol, patchSize, initsub, shift, dropfile, procfun, memory{:});
-        dropfile.grididx = grididx(:);
-        dropfile.cropVolSize = cropVolSize;
-        dropfile.gridSize = gridSize;
-        libsize = size(dropfile, 'lib');
-        outlib = dropfile;
+        % get the index and subscript of the initial grid
+        [grididx, cropVolSize, gridSize] = patchlib.grid(volSize, patchSize, patchOverlap{:}); 
+
+        initsub = cell(1, nDims);
+        [initsub{:}] = ind2sub(volSize, grididx);
+        vol = cropVolume(vol, cropVolSize);
+
+        % get all of the shifts in a [prod(patchSize) x nDims] subscript matrix
+        shift = cell(1, nDims);
+        [shift{:}] = ind2sub(patchSize, (1:prod(patchSize))');
+        shift = [shift{:}];
+
+        % compute the actual library
+        if ~opt.dofiledrop
+            library = memlib(vol, initsub, shift, opt.procfun);
+            libsize = size(library);
+            outlib = library;
+            
+        else
+            assert(isempty(opt.locations), 'if locations are specified, cannot use filelib right now :(');
+            filelib(vol, patchSize, initsub, shift, opt.dropfile, opt.procfun, opt.memory{:});
+            opt.dropfile.grididx = grididx(:);
+            opt.dropfile.cropVolSize = cropVolSize;
+            opt.dropfile.gridSize = gridSize;
+            libsize = size(opt.dropfile, 'lib');
+            outlib = opt.dropfile;
+        end
+        
+        if ~isempty(opt.locations)
+            assert(all(patchOverlap == (patchSize + 1)));
+            grididx = subvec2ind(gridSize, opt.locations);
+            outlib = outlib(idxsamples, :);
+            gridSize = NaN;
+        end
     end
     
-    % check final library size
-    assert(numel(grididx) == libsize(1), ...
-        'Something went wrong with the library of index computation. Sizes don''t match.');
-    assert(prod(gridSize) == libsize(1), ...
-        'Something went wrong with the library of index computation. Sizes don''t match.');
+    if isempty(opt.locations)
+        % check final library size
+        assert(numel(grididx) == libsize(1), ...
+            'Something went wrong with the library of index computation. Sizes don''t match.');
+        assert(prod(gridSize) == libsize(1), ...
+            'Something went wrong with the library of index computation. Sizes don''t match.');
+    end
     
     % outputs 
     outputs = {outlib, grididx(:), cropVolSize, gridSize};
     varargout = outputs(1:nargout); 
+end
+
+function [patches, idx] = vol2liblocations(vol, patchSize, locs)
+    idx = subvec2ind(size(vol), locs);
+    nPatches = size(locs, 1);
+    
+    patches = zeros(nPatches, prod(patchSize));
+    startc = mat2cell(locs, ones(size(locs, 1), 1), size(locs, 2));
+    endc = mat2cell(bsxfun(@plus, locs, patchSize-1), ones(size(locs, 1), 1), size(locs, 2));
+    
+    for i = 1:nPatches
+        rangec = arrayfunc(@(l, p) l:p, startc{i}, endc{i});
+        v = vol(rangec{:});
+        patches(i, :) = v(:)';
+    end
 end
 
 function varargout = fulllib(vol, patchSize, varargin)
@@ -263,10 +307,10 @@ function varargout = vol2libcell(vol, patchSize, varargin)
     end
 end        
 
-function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseInputs(varargin)
+function [patchOverlap, opt] = parseInputs(vol, patchSize, varargin)
 
     patchOverlap = {'sliding'};
-    if isodd(nargin)
+    if isodd(numel(varargin))
         patchOverlap = varargin(1);
         varargin = varargin(2:end);
     end
@@ -286,6 +330,7 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
     p.addParameter('memory', defmem, @isscalar);
     p.addParameter('verbose', false, @islogical);
     p.addParameter('fulllib', false, @islogical);
+    p.addParameter('locations', [], @isnumeric);
     p.addParameter('procfun', @(x) x, @(x) isa(x, 'function_handle'));
     p.parse(varargin{:});
     
@@ -294,18 +339,29 @@ function [patchOverlap, dofiledrop, dropfile, mem, procfun, forcefull] = parseIn
         fprintf('Default memory:%f, passed memory: %f\n', defmem, p.Results.memory);
     end
     
-    dofiledrop = ~isempty(p.Results.savefile);
-    dropfile = [];
-    if dofiledrop
-         dropfile = matfile(p.Results.savefile, 'Writable', true);
+    opt.dofiledrop = ~isempty(p.Results.savefile);
+    opt.dropfile = [];
+    if opt.dofiledrop
+         opt.dropfile = matfile(p.Results.savefile, 'Writable', true);
          assert(p.Results.memory > 0, 'Need positive memory value. Detected: %f', p.Results.memory);
     end
     
-    mem = {};
+    opt.mem = {};
     if p.Results.memory > 0
-        mem = {p.Results.memory};
+        opt.mem = {p.Results.memory};
     end
     
-    procfun = p.Results.procfun;
-    forcefull = p.Results.fulllib;
+    opt.procfun = p.Results.procfun;
+    opt.fulllib = p.Results.fulllib;
+    opt.locations = p.Results.locations;
+    
+    msg = 'All specified locations must be within the volume minus patchSize';
+    assert(all(all(bsxfun(@lt, opt.locations, size(vol) - patchSize + 2))), msg);
+    
+    msg = 'Given Locations, patchOverlap should be sliding or not specified.';
+    if ischar(patchOverlap{1})
+        assert(strcmp(patchOverlap{1}, 'sliding'), msg);
+    else
+        assert(all(patchOverlap{:} == (patchSize - 1)), msg);
+    end
 end
