@@ -356,7 +356,9 @@ function [patchOverlap, opt] = parseInputs(vol, patchSize, varargin)
     opt.locations = p.Results.locations;
     
     msg = 'All specified locations must be within the volume minus patchSize';
-    assert(all(all(bsxfun(@lt, opt.locations, size(vol) - patchSize + 2))), msg);
+    if ~isempty(opt.locations)
+        assert(all(all(bsxfun(@lt, opt.locations, size(vol) - patchSize + 2))), msg);
+    end
     
     msg = 'Given Locations, patchOverlap should be sliding or not specified.';
     if ischar(patchOverlap{1})
