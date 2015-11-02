@@ -6,7 +6,7 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
 % prod(patchSize)]. nSamples is a scalar, indicating the total number of patches to be sampled, or a
 % vector [nVols x 1] indicating exactly how many samples per volume.
 %
-% patches = vol2samples(nSamples, patchSize, vols1, vols2, ...) behaves like ol2samples(nSamples,
+% patches = vol2samples(nSamples, patchSize, vols1, vols2, ...) behaves like vol2samples(nSamples,
 % patchSize, vols1), but also returns the patches from vols2 at the same sampling locations at where
 % the original patches came from vols1. patches is then a cell, with patches{1} giving the patches
 % from vols1, patches{2} giving the (same location) patches but from vols2, etc. Each volsX group
