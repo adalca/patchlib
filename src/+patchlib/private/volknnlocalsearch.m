@@ -41,11 +41,16 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, fillK, v
     f = find(strcmp('Distance', varargin));
     DO_LOCAL = numel(f) > 0 && ~ischar(varargin{f+1});
         
-    if ~DO_LOCAL % first computes *all* the distances.
-        % compute all of the pairwise distances
-        tmp_dst = pdist2withParamValue(src, refs, varargin{:});
+    try
+        if ~DO_LOCAL % first computes *all* the distances.
+            % compute all of the pairwise distances
+            tmp_dst = pdist2withParamValue(src, refs, varargin{:});
+        end
+    catch err
+        fprintf(2, err.message);
+        DO_LOCAL = true;
     end
-    
+        
     subset = find(src.mask(src.grididx))';
     for i = subset(:)' %1:size(src.lib, 1)
         
