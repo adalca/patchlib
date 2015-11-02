@@ -1,0 +1,259 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>example Patch MRF</title><meta name="generator" content="MATLAB 8.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-11-02"><meta name="DC.source" content="example_patchmrf.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>example Patch MRF</h1><!--introduction--><p>run this code with &gt;&gt; publish('example_patchmrf', 'outputDir', 'doc/examples/example_patchmrf');</p><p>This file demonstrates the use of patchmrf() in patchlib.</p><p>TODO: do some more serious example where you learn from a second image   especially medical images where can use location</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Setup</a></li><li><a href="#2">knnsearch</a></li><li><a href="#3">MRF on voxel intensities</a></li><li><a href="#4">MRF on voxel intensities - tuned parameters</a></li><li><a href="#5">MRF on correspondances</a></li><li><a href="#6">MRF using Mean Field Inference.</a></li></ul></div><h2>Setup<a name="1"></a></h2><p>decide on tests</p><pre class="codeinput">testids = [1, 2];
+
+<span class="comment">% get parameters</span>
+noisestd = 0.1;
+patchSize = [5, 5, 3];
+
+[desiredim, noisyim, refim] = example_prepareData(<span class="string">'boston-blue-m'</span>, noisestd);
+clim = [-max(size(refim)), max(size(refim))];
+
+<span class="comment">% visualize the data</span>
+patchview.figure();
+subplot(1, 3, 1); imshow(desiredim); title(<span class="string">'Desired image'</span>);
+subplot(1, 3, 2); imshow(noisyim); title(<span class="string">'Noisy (input) image'</span>);
+subplot(1, 3, 3); imshow(refim); title(<span class="string">'Reference image'</span>);
+drawnow;
+</pre><pre class="codeoutput">Data loaded
+</pre><img vspace="5" hspace="5" src="example_patchmrf_01.png" alt=""> <h2>knnsearch<a name="2"></a></h2><p>perform a knn search for mrf patches in noisyim by using im as reference. extract patches in a [nPatches x V] matrix, where V == prod(patchSize)</p><pre class="codeinput">[patches, pDst, pIdx, ~, srcgridsize, refgridsize] = <span class="keyword">...</span>
+    patchlib.volknnsearch(noisyim, refim, patchSize, <span class="string">'sliding'</span>, <span class="string">'K'</span>, 10);
+resimg = patchlib.quilt(patches, srcgridsize, patchSize, <span class="string">'sliding'</span>);
+resimg1 = patchlib.quilt(patches(:,:,1), srcgridsize, patchSize);
+
+<span class="comment">% visualize</span>
+caf; patchview.figure();
+subplot(1, 3, 1); imshow(desiredim); title(<span class="string">'Desired image'</span>);
+subplot(1, 3, 2); imshow(resimg); title(<span class="string">'Quilt without MRF'</span>);
+subplot(1, 3, 3); imshow(resimg1); title(<span class="string">'Quilt using only top patch'</span>);
+drawnow;
+
+<span class="comment">% visualize the displacement of the top patch</span>
+disp1 = patchlib.corresp2disp(srcgridsize, refgridsize, pIdx(:, 1), <span class="string">'reshape'</span>, true);
+patchview.figure();
+subplot(1, 2, 1); imagesc(disp1{1}, clim); title(<span class="string">'disp x'</span>); colormap <span class="string">gray</span>; axis <span class="string">off</span>; axis <span class="string">equal</span>;
+subplot(1, 2, 2); imagesc(disp1{2}, clim); title(<span class="string">'disp y'</span>); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+drawnow;
+</pre><pre class="codeoutput">lib2patches: lib 1 of 1
+</pre><img vspace="5" hspace="5" src="example_patchmrf_02.png" alt=""> <img vspace="5" hspace="5" src="example_patchmrf_03.png" alt=""> <h2>MRF on voxel intensities<a name="3"></a></h2><p>run a patch MRF using default parameters</p><pre class="codeinput">qpatches = patchlib.patchmrf(patches, srcgridsize, pDst);
+
+<span class="comment">% quilt using the top resulting patch</span>
+resmrfimg = patchlib.quilt(qpatches, srcgridsize, patchSize, <span class="string">'sliding'</span>);
+
+<span class="comment">% visualize</span>
+caf; patchview.figure();
+subplot(1, 2, 1); imshow(desiredim); title(<span class="string">'Desired image'</span>);
+subplot(1, 2, 2); imshow(resmrfimg); title(<span class="string">'Quilt via top MRF patch'</span>);
+</pre><pre class="codeoutput">Warning: Using Default sliding overlap 
+</pre><img vspace="5" hspace="5" src="example_patchmrf_04.png" alt=""> <h2>MRF on voxel intensities - tuned parameters<a name="4"></a></h2><pre class="codeinput"><span class="comment">% run an mrf on overlap</span>
+[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , <span class="keyword">...</span>
+    <span class="string">'lambda_node'</span>, 0.1, <span class="string">'lambda_edge'</span>, 100, <span class="string">'pIdx'</span>, pIdx, <span class="string">'refgridsize'</span>, refgridsize);
+disp2 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, <span class="string">'reshape'</span>, true);
+resimg2 = patchlib.quilt(qp, srcgridsize, patchSize);
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title(<span class="string">'desired image'</span>);
+subplot(2, 2, 2); imshow(resimg2); title(<span class="string">'overlap-based patchmrf result image'</span>);
+subplot(2, 2, 3); imagesc(disp2{1}, clim); title(<span class="string">'disp x'</span>); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+subplot(2, 2, 4); imagesc(disp2{2}, clim); title(<span class="string">'disp y'</span>); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+</pre><pre class="codeoutput">Warning: Using Default sliding overlap 
+</pre><img vspace="5" hspace="5" src="example_patchmrf_05.png" alt=""> <h2>MRF on correspondances<a name="5"></a></h2><p>this encourages nearby patches to come from nearby locations/displacements.</p><pre class="codeinput">usemex = exist(<span class="string">'pdist2mex'</span>, <span class="string">'file'</span>) == 3;
+edgefn = @(a1,a2,a3,a4) patchlib.correspdst(a1, a2, a3, a4, [], usemex);
+[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , <span class="string">'edgeDst'</span>, edgefn, <span class="keyword">...</span>
+    <span class="string">'lambda_node'</span>, 0.1, <span class="string">'lambda_edge'</span>, 100, <span class="string">'pIdx'</span>, pIdx, <span class="string">'refgridsize'</span>, refgridsize);
+disp3 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, <span class="string">'reshape'</span>, true);
+resimg3 = patchlib.quilt(qp, srcgridsize, patchSize);
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title(<span class="string">'desired image'</span>);
+subplot(2, 2, 2); imshow(resimg3); title(<span class="string">'correp-based patchmrf result image'</span>);
+subplot(2, 2, 3); imagesc(disp3{1}); title(<span class="string">'disp x'</span>); caxis(clim); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+subplot(2, 2, 4); imagesc(disp3{2}); title(<span class="string">'disp y'</span>); caxis(clim); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+</pre><pre class="codeoutput">Warning: Using Default sliding overlap 
+</pre><img vspace="5" hspace="5" src="example_patchmrf_06.png" alt=""> <h2>MRF using Mean Field Inference.<a name="6"></a></h2><p>run an mrf on overlap, using meanfield</p><pre class="codeinput">[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , <span class="keyword">...</span>
+    <span class="string">'lambda_node'</span>, 0.1, <span class="string">'lambda_edge'</span>, 100, <span class="string">'pIdx'</span>, pIdx, <span class="string">'refgridsize'</span>, refgridsize, <span class="keyword">...</span>
+    <span class="string">'infer_method'</span>, @UGM_Infer_MeanField);
+disp4 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, <span class="string">'reshape'</span>, true);
+resimg4 = patchlib.quilt(qp, srcgridsize, patchSize);
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title(<span class="string">'desired image'</span>);
+subplot(2, 2, 2); imshow(resimg4); title(<span class="string">'overlap-based patchmrf result image w/ mf'</span>);
+subplot(2, 2, 3); imagesc(disp4{1}); title(<span class="string">'disp x'</span>); caxis(clim); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+subplot(2, 2, 4); imagesc(disp4{2}); title(<span class="string">'disp y'</span>); caxis(clim); axis <span class="string">off</span>; axis <span class="string">equal</span>;
+</pre><pre class="codeoutput">Warning: Using Default sliding overlap 
+</pre><img vspace="5" hspace="5" src="example_patchmrf_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2015a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% example Patch MRF
+% run this code with 
+% >> publish('example_patchmrf', 'outputDir', 'doc/examples/example_patchmrf');
+%
+% This file demonstrates the use of patchmrf() in patchlib.
+%
+% TODO: do some more serious example where you learn from a second image
+%   especially medical images where can use location
+
+%% Setup
+% decide on tests
+testids = [1, 2]; 
+
+% get parameters
+noisestd = 0.1;
+patchSize = [5, 5, 3];
+
+[desiredim, noisyim, refim] = example_prepareData('boston-blue-m', noisestd);
+clim = [-max(size(refim)), max(size(refim))];
+
+% visualize the data
+patchview.figure();
+subplot(1, 3, 1); imshow(desiredim); title('Desired image'); 
+subplot(1, 3, 2); imshow(noisyim); title('Noisy (input) image');
+subplot(1, 3, 3); imshow(refim); title('Reference image');
+drawnow;
+
+%% knnsearch
+% perform a knn search for mrf patches in noisyim by using im as reference.
+% extract patches in a [nPatches x V] matrix, where V == prod(patchSize)
+[patches, pDst, pIdx, ~, srcgridsize, refgridsize] = ...
+    patchlib.volknnsearch(noisyim, refim, patchSize, 'sliding', 'K', 10);
+resimg = patchlib.quilt(patches, srcgridsize, patchSize, 'sliding'); 
+resimg1 = patchlib.quilt(patches(:,:,1), srcgridsize, patchSize); 
+
+% visualize
+caf; patchview.figure();
+subplot(1, 3, 1); imshow(desiredim); title('Desired image'); 
+subplot(1, 3, 2); imshow(resimg); title('Quilt without MRF'); 
+subplot(1, 3, 3); imshow(resimg1); title('Quilt using only top patch'); 
+drawnow;
+
+% visualize the displacement of the top patch
+disp1 = patchlib.corresp2disp(srcgridsize, refgridsize, pIdx(:, 1), 'reshape', true);
+patchview.figure();
+subplot(1, 2, 1); imagesc(disp1{1}, clim); title('disp x'); colormap gray; axis off; axis equal; 
+subplot(1, 2, 2); imagesc(disp1{2}, clim); title('disp y'); axis off; axis equal; 
+drawnow;
+
+%% MRF on voxel intensities
+% run a patch MRF using default parameters
+qpatches = patchlib.patchmrf(patches, srcgridsize, pDst);
+
+% quilt using the top resulting patch
+resmrfimg = patchlib.quilt(qpatches, srcgridsize, patchSize, 'sliding'); 
+
+% visualize
+caf; patchview.figure();
+subplot(1, 2, 1); imshow(desiredim); title('Desired image'); 
+subplot(1, 2, 2); imshow(resmrfimg); title('Quilt via top MRF patch'); 
+
+%% MRF on voxel intensities - tuned parameters
+
+% run an mrf on overlap
+[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , ...
+    'lambda_node', 0.1, 'lambda_edge', 100, 'pIdx', pIdx, 'refgridsize', refgridsize);
+disp2 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, 'reshape', true);
+resimg2 = patchlib.quilt(qp, srcgridsize, patchSize); 
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title('desired image');
+subplot(2, 2, 2); imshow(resimg2); title('overlap-based patchmrf result image'); 
+subplot(2, 2, 3); imagesc(disp2{1}, clim); title('disp x'); axis off; axis equal;
+subplot(2, 2, 4); imagesc(disp2{2}, clim); title('disp y'); axis off; axis equal;
+
+%% MRF on correspondances 
+% this encourages nearby patches to come from nearby locations/displacements.
+usemex = exist('pdist2mex', 'file') == 3;
+edgefn = @(a1,a2,a3,a4) patchlib.correspdst(a1, a2, a3, a4, [], usemex); 
+[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , 'edgeDst', edgefn, ...
+    'lambda_node', 0.1, 'lambda_edge', 100, 'pIdx', pIdx, 'refgridsize', refgridsize);
+disp3 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, 'reshape', true);
+resimg3 = patchlib.quilt(qp, srcgridsize, patchSize); 
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title('desired image'); 
+subplot(2, 2, 2); imshow(resimg3); title('correp-based patchmrf result image'); 
+subplot(2, 2, 3); imagesc(disp3{1}); title('disp x'); caxis(clim); axis off; axis equal;
+subplot(2, 2, 4); imagesc(disp3{2}); title('disp y'); caxis(clim); axis off; axis equal;
+
+%% MRF using Mean Field Inference.
+% run an mrf on overlap, using meanfield
+[qp, ~, ~, ~, pi] = patchlib.patchmrf(patches, srcgridsize, pDst, patchSize , ...
+    'lambda_node', 0.1, 'lambda_edge', 100, 'pIdx', pIdx, 'refgridsize', refgridsize, ...
+    'infer_method', @UGM_Infer_MeanField);
+disp4 = patchlib.corresp2disp(srcgridsize, refgridsize, pi, 'reshape', true);
+resimg4 = patchlib.quilt(qp, srcgridsize, patchSize); 
+
+caf; patchview.figure();
+subplot(2, 2, 1); imshow(desiredim); title('desired image'); 
+subplot(2, 2, 2); imshow(resimg4); title('overlap-based patchmrf result image w/ mf'); 
+subplot(2, 2, 3); imagesc(disp4{1}); title('disp x'); caxis(clim); axis off; axis equal;
+subplot(2, 2, 4); imagesc(disp4{2}); title('disp y'); caxis(clim); axis off; axis equal;
+
+   
+##### SOURCE END #####
+--></body></html>

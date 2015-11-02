@@ -17,6 +17,35 @@ function varargout = example_prepareData(type, noisestd, varargin)
             % reference
             varargout{3} = im2;
             
+            
+        case 'boston-blue'
+            
+            im1 = im2double(imread(fullfile(datapath, 'boston-blue-crop1.jpg')));
+            im2 = im2double(imread(fullfile(datapath, 'boston-blue-crop2.jpg')));
+            
+            % desired
+            varargout{1} = im1;
+            
+            % src/target
+            varargout{2} = within([0, 1], normrnd(im1, noisestd));
+            
+            % reference
+            varargout{3} = im2;
+            
+        case 'boston-blue-m'
+            
+            im1 = im2double(imread(fullfile(datapath, 'boston-blue-cropm1.jpg')));
+            im2 = im2double(imread(fullfile(datapath, 'boston-blue-cropm2.jpg')));
+            
+            % desired
+            varargout{1} = im1;
+            
+            % src/target
+            varargout{2} = within([0, 1], normrnd(im1, noisestd));
+            
+            % reference
+            varargout{3} = im2;
+            
         case 'pepper'
             % load image. We'll crop around a small pepper.
             imd = im2double(imread('peppers.png'));
