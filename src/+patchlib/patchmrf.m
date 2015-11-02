@@ -6,8 +6,10 @@ function [qpatches, varargout] = patchmrf(varargin)
 %   distances/costs.
 %
 %   The function computes potential out of unary and edge distances via exp(-lambda_x * dst), and
-%   then sets up an MRF. it performs inference via LBP using UGM_Infer_LBP. It then returns the
-%   patches with the highest posterior at every point on the grid.
+%   then sets up an MRF. It performs inference via the UGM toolbox. By default, the UGM_Infer_LBP
+%   function is used which uses Loopy Belief Propagation. It then returns the patches with the
+%   highest posterior at every point on the grid. You can change the inference method using the
+%   infer_method parameter
 %
 %   qpatches = patchmrf(..., patchSize) allows for the specification of the 1xD patchSize. if this
 %   is not provided, it will be guessed from the patches.
@@ -27,6 +29,7 @@ function [qpatches, varargout] = patchmrf(varargin)
 %       maxLBPIters: (default: 100). the maximum number of LBP iterations. 
 %       pIdx
 %       refgridsize
+%       infer_method: function handle. fault: @UGM_Infer_LBP
 %
 %   [qpatches, bel, pot, qSel, pIdxSel, rIdxSel] = patchmrf(...). see qSel use in code.
 %
@@ -49,7 +52,7 @@ function [qpatches, varargout] = patchmrf(varargin)
     [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs);
     
     % run Loopy BP via UGM
-    [nodeBel, edgeBel, logZ] = UGM_Infer_LBP(nodePot, edgePot, edgeStruct);
+    [nodeBel, edgeBel, logZ] = inputs.infer_method(nodePot, edgePot+eps, edgeStruct);
     assert(isclean(nodeBel), 'PATCHLIB:PATCHMRF', 'UGMLBP: Bad nodeBel.');
         
     % extract max nodes
@@ -217,6 +220,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('gridIdx', 1:prod(gridSize), @isnumeric);
     p.addParameter('srcSize', [], @isnumeric);
     p.addParameter('connectivity', 3^numel(gridSize)-1, @isnumeric);
+    p.addParameter('infer_method', @UGM_Infer_LBP, @isfunc);
     p.parse(paramvalues{:})
     inputs = p.Results;
     
