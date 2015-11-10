@@ -6,6 +6,10 @@ function votehist(vol, patches, grididx, patchSize, varargin)
 %
 %   votehist(vol, patches, grididx, patchSize, sliceID) for 3D: vol is 3D, but we will only show
 %   slice sliceID;
+%
+%   votehist(..., Param, Value) allows for the following param/value pairs:
+%       method - (default:2) % 1 for colorful, 2 for no color. Colorful is a bit buggy right now.
+%       histNBins - (default:10) the number of histogram bins 
 %   
 %   Note: vol can be any volume that is the size of the original (source) volume on which grididx is
 %   built. For example, you may use your desired resulting volume, if you are in a phase where you
@@ -16,20 +20,9 @@ function votehist(vol, patches, grididx, patchSize, varargin)
 %   Author: adalca@csail.mit.edu
     
     % input checks
-    nDims = ndims(vol);
-    assert(nDims == 2 || nDims == 3, 'Currently only implemented for 2D or 3D');
-    if nDims == 3;
-        slice = vol(:, :, varargin{1});
-        sliceNr = varargin{1};
-        varargin = varargin(2:end);
-    else
-        slice = vol;
-        sliceNr = [];
-    end
-    
-    % some hardcoded parameters. Would be nicer to pass these in.
-    method = 2; % 1 for colorful, 2 for no color. Colorful is a bit buggy right now.
-    histNBins = 10; % could learn this in some meaningful way.
+    narginchk(4, inf);
+    inputs = parseInputs(vol, patches, grididx, patchSize, varargin{:});
+    slice = vol(:,:,inputs.slice);
     
     % show slice
     patchview.figure();
@@ -53,7 +46,7 @@ function votehist(vol, patches, grididx, patchSize, varargin)
             y = round(y);
 
             % get votes for this location
-            votes = patchlib.locvotes([y, x, sliceNr], patches, grididx, patchSize, size(vol));
+            votes = patchlib.locvotes([y, x, inputs.slice], patches, grididx, patchSize, size(vol));
             votes = double(votes);
             
             % if no votes for this area
@@ -73,10 +66,10 @@ function votehist(vol, patches, grididx, patchSize, varargin)
                 subplot(2, 4, idx);
                 
                 % prepare the hisogram bins
-                binc = linspace(minmax(1), minmax(2), histNBins);
+                binc = linspace(minmax(1), minmax(2), inputs.histNBins);
                 
                 % show histogram based on different methods
-                switch method
+                switch inputs.method
                     case 1 % colored based on K (maybe TODO: based on (binned) pDst ?
                                       
                         % get valid Ks and colormap
@@ -136,4 +129,27 @@ function votehist(vol, patches, grididx, patchSize, varargin)
         end
     end
     
+end
+
+function inputs = parseInputs(vol, patches, grididx, patchSize, varargin)
+
+    nDims = ndims(vol);
+    assert(nDims == 2 || nDims == 3, 'Currently only implemented for 2D or 3D');
+
+    p = inputParser();
+    p.addRequired('vol', @isnumeric);
+    p.addRequired('patches', @(x) size(x, 1) == numel(grididx));
+    p.addRequired('grididx', @(x) max(x) <= numel(vol));
+    p.addRequired('patchSize', @isnumeric);
+    if nDims == 3
+        p.addRequired('slice', @isnumeric)
+    end
+    p.addParameter('method', 2, @isscalar); % 1 for colorful, 2 for no color. Colorful is a bit buggy right now.
+    p.addParameter('histNBins', 10, @isscalar); % could learn this in some meaningful way.
+    p.parse(vol, patches, grididx, patchSize, varargin{:})
+    inputs = p.Results;
+
+    if nDims == 2
+        inputs.slice = 1;
+    end
 end
