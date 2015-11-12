@@ -55,7 +55,7 @@ function [qpatches, varargout] = patchmrf(varargin)
     [nodeBel, edgeBel, logZ] = inputs.infer_method(nodePot, edgePot+eps, edgeStruct);
     assert(isclean(nodeBel), 'PATCHLIB:PATCHMRF', 'UGMLBP: Bad nodeBel.');
         
-    % extract max nodes
+    % extract max nodes. TODO: look into UGM decode methods.
     [~, maxNodes] = max(nodeBel, [], 2);
     
     % create index in pDst - sized array
