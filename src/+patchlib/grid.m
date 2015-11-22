@@ -92,7 +92,10 @@ function [patchOverlap, startDel, retsub] = parseinputs(volSize, patchSize, vara
     if ischar(patchOverlap)
         patchOverlap = patchlib.overlapkind(patchOverlap, patchSize);
     end
-    assert(all(patchSize > patchOverlap));
+    patchSizestr = sprintf(repmat('%d ', [1, numel(patchSize)]), patchSize);
+    patchOverlapstr = sprintf(repmat('%d ', [1, numel(patchSize)]), patchOverlap);
+    assert(all(patchSize > patchOverlap), ...
+        'need: patchSize (%s) > patchOverlap (%s)', patchSizestr, patchOverlapstr);
     
     % startDel
     
