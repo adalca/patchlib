@@ -25,6 +25,9 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
 % patches = vol2samples(nSamples, patchSize, mfstruct, volname1, volname2, ...) is the matfile
 % pointer equivalent of vol2samples(nSamples, patchSize, vols1, vols2, ...).
 %
+% patches = vol2samples(..., withReplacement) allows for the specification of a logical on whether
+% or not to do the sampling with replacement. The default is false.
+%
 % [patches, locsamples, volsamples] = vol2samples(...) also returns the location and volume id of
 % the samples.
 %
@@ -33,23 +36,22 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
 % Contact: {adalca,klbouman}@csail.mit.edu
 
     % input checking
-    [nSamples, volstruct, volnames] = parseInputs(nSamples, patchSize, varargin{:});
+    [nSamples, volstruct, volnames, replace] = parseInputs(nSamples, patchSize, varargin{:});
+    [volsamples, locidx, volSizes] = sample(nSamples, volstruct, volnames, patchSize, replace);
     
     % get patches from samples
-    nTotalSamples = sum(nSamples);
     patches = repmat({zeros(nTotalSamples, prod(patchSize))}, [1, numel(volnames)]);
-    locsamples = zeros(nTotalSamples, 3);
-    volsamples = zeros(nTotalSamples, 1);
+    locsamples = zeros(size(volsamples, 1), size(volSizes, 2));
+    
     for vi = find(nSamples(:)' > 0)
-        inds = sum(nSamples(1:vi-1)) + (1:nSamples(vi));
-        volsamples(inds) = vi;
+        inds = find(volsamples == vi);
         
         % load volume. 
         % if volstruct is a matfile, this is when MATLAB loads the file for the first time
         vol = volstruct{vi}.(volnames{1});
 
-        % sample locations
-        locsamples(inds, :) = ceil(bsxfun(@times, rand(nSamples(vi), 3), (size(vol) - patchSize + 1)));
+        % get locations
+        locsamples(inds, :) = ind2subvec(volSizes(vi), locidx(inds));
         
         % extract patches via library.
         patches{1}(inds, :) = patchlib.vol2lib(vol, patchSize, 'locations', locsamples(inds, :));
@@ -65,13 +67,19 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
     end
 end
 
-function [nSamples, mfstruct, volnames] = parseInputs(nSamples, patchSize, varargin)
+function [nSamples, mfstruct, volnames, replace] = parseInputs(nSamples, patchSize, varargin)
 
     % check inputs
     narginchk(3, inf);
     assert(isnumeric(nSamples));
     assert(isnumeric(patchSize));
 
+    replace = false;
+    if islogical(varargin{end})
+        replace = varargin{end};
+        varargin = varargin(1:end-1);
+    end
+    
     % check whether third argument is matfile(s) or volume(s)
     arg3 = varargin{1};
     arg3 = ifelse(iscell(arg3), arg3{1}, arg3);
@@ -105,11 +113,70 @@ function [nSamples, mfstruct, volnames] = parseInputs(nSamples, patchSize, varar
         assert(iscellstr(varargin(2:end)), 'matfile volumes should be strings');
         volnames = varargin(2:end);
     end
-    
-    % make nSamples a vector
-    nVols = numel(mfstruct);
-    if isscalar(nSamples)
-        vSample = randsample(nVols, nSamples, true);
-        nSamples = hist(vSample, 1:nVols);
+end
+
+function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patchSize, replace)
+
+    % get the volume sizes
+    if isstruct(mfstruct)
+        volSizes = cellfunc(@(x) size(x.(volnames{1})), mfstruct);
+    else % matfile
+        volSizes = cellfunc(@(m) size(m, volnames{1}), mfstruct);
     end
+    volSizes = cat(1, volSizes{:});
+
+    % make nSamples a vector (get the number of samples in each volume)
+    nVols = numel(mfstruct);
+    if replace 
+        if isscalar(nSamples) 
+            % sampling patches with replacement, so can freely sample volumes with replacement without
+            % regard to over-sampling, etc.        
+            vSample = randsample(nVols, nSamples, replace); 
+            nSamples = hist(vSample, 1:nVols);
+        end
+        
+        assert(numel(nSamples) == numel(mfstruct))
+        [volidx, locidx] = samplePatchesInVol(nSamples, volSizes, replace);
+        
+    % without replacement, need to worry about size of samples assigned to each volume. For
+    % example, need to avoid wanting to sample more samples from volume 1 than are available.
+    else
+        if isscalar(nSamples)
+            effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
+            totSizes = prod(effVolSizes, 2);
+            assert(nSampled <= sum(totSizes)); % make sure we're not asking for too many samples.
+            
+            % method to avoid making a huge vector: sample assuming you have an exploded vector, and
+            % then loop though the possible volumes.
+            idx = randsample(nSamples, sum(totSizes));
+            
+            ctotSizes = [0, cumsum(totSizes)];
+            ci = 1;
+            for i = 1:numel(mfstruct)
+                f = find(idx >= (ctotSizes(i) + 1) & idx <= ctotSizes(i+1));
+                locidx((ci + 1):(ci + numel(f))) = idx(f) - ctotSizes(i);
+                volidx((ci + 1):(ci + numel(f))) = i;
+                ci = ci + numel(f);
+            end
+            assert(ci == nSamples);
+            
+        else
+            assert(numel(nSamples) == numel(mfstruct));
+            [volidx, locidx] = samplePatchesInVol(nSamples, volSizes, replace);
+        end
+    end
+end
+
+function [volidx, locidx] = samplePatchesInVol(nSamples, volSizes, replace)
+    volidx = zeros(nSamples, 1);
+    locidx = zeros(nSamples, 1);
+
+    assert(numel(nSamples) == numel(mfstruct));
+    ci = 1;
+    for i = 1:numel(nSamples)
+        locidx((ci + 1):(ci + nSamples(i))) = randsample(nSamples(i), prod(volSizes(i, :)), replace);
+        volidx((ci + 1):(ci + nSamples(i))) = i;
+        ci = ci + nSamples(i);
+    end
+    assert(ci == sum(nSamples));
 end
