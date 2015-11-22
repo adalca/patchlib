@@ -48,6 +48,7 @@ function [pIdx, pRefIdxs, pDst] = volknnlocalsearch(src, refs, spacing, fillK, v
         end
     catch err
         fprintf(2, err.message);
+        fprintf(2, '\nForcing DO_LOCAL');
         DO_LOCAL = true;
     end
         
@@ -123,7 +124,9 @@ function [gidxsall, riall, wIdx, refIdx] = winRefIdx(refs, ridx, mingridsub, max
         
         % get the indexes of within a window of i
         % these will be mingridsub_i <= locsub <= maxgridsub{r}_i
-        wIdxsel = bsxfun(@ge, locsub, mingridsub(i, :)) & bsxfun(@le, locsub, maxgridsub{r}(i, :));
+        cond1 = bsxfun(@ge, locsub, mingridsub(i, :));
+        cond2 = bsxfun(@le, locsub, maxgridsub{r}(i, :));
+        wIdxsel = cond1 & cond2;
         wIdxsel = all(wIdxsel, 2);
         
         % put all the neighbor indexes into a cell
