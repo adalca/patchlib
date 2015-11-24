@@ -38,9 +38,11 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
     % input checking
     [nSamples, volstruct, volnames, replace] = parseInputs(nSamples, patchSize, varargin{:});
     [volsamples, locidx, volSizes] = sample(nSamples, volstruct, volnames, patchSize, replace);
+    effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
+
     
     % get patches from samples
-    patches = repmat({zeros(nTotalSamples, prod(patchSize))}, [1, numel(volnames)]);
+    patches = repmat({zeros(sum(nSamples), prod(patchSize))}, [1, numel(volnames)]);
     locsamples = zeros(size(volsamples, 1), size(volSizes, 2));
     
     for vi = find(nSamples(:)' > 0)
@@ -51,7 +53,7 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
         vol = volstruct{vi}.(volnames{1});
 
         % get locations
-        locsamples(inds, :) = ind2subvec(volSizes(vi), locidx(inds));
+        locsamples(inds, :) = ind2subvec(effVolSizes(vi, :), locidx(inds));
         
         % extract patches via library.
         patches{1}(inds, :) = patchlib.vol2lib(vol, patchSize, 'locations', locsamples(inds, :));
@@ -118,7 +120,7 @@ end
 function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patchSize, replace)
 
     % get the volume sizes
-    if isstruct(mfstruct)
+    if isstruct(mfstruct{1})
         volSizes = cellfunc(@(x) size(x.(volnames{1})), mfstruct);
     else % matfile
         volSizes = cellfunc(@(m) size(m, volnames{1}), mfstruct);
@@ -144,13 +146,13 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
         if isscalar(nSamples)
             effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
             totSizes = prod(effVolSizes, 2);
-            assert(nSampled <= sum(totSizes)); % make sure we're not asking for too many samples.
+            assert(nSamples <= sum(totSizes)); % make sure we're not asking for too many samples.
             
             % method to avoid making a huge vector: sample assuming you have an exploded vector, and
             % then loop though the possible volumes.
-            idx = randsample(nSamples, sum(totSizes));
+            idx = randsample(sum(totSizes), nSamples);
             
-            ctotSizes = [0, cumsum(totSizes)];
+            ctotSizes = [0, cumsum(totSizes(:)')];
             ci = 1;
             for i = 1:numel(mfstruct)
                 f = find(idx >= (ctotSizes(i) + 1) & idx <= ctotSizes(i+1));
@@ -158,7 +160,9 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
                 volidx((ci + 1):(ci + numel(f))) = i;
                 ci = ci + numel(f);
             end
-            assert(ci == nSamples);
+            assert(ci == nSamples+1);
+            volidx = volidx(:);
+            locidx = locidx(:);
             
         else
             assert(numel(nSamples) == numel(mfstruct));
