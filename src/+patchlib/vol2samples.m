@@ -39,13 +39,13 @@ function [patches, locsamples, volsamples] = vol2samples(nSamples, patchSize, va
     [nSamples, volstruct, volnames, replace] = parseInputs(nSamples, patchSize, varargin{:});
     [volsamples, locidx, volSizes] = sample(nSamples, volstruct, volnames, patchSize, replace);
     effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
-
+    nSamplesVol = hist(volsamples, 1:size(volSizes, 1));
     
     % get patches from samples
-    patches = repmat({zeros(sum(nSamples), prod(patchSize))}, [1, numel(volnames)]);
-    locsamples = zeros(size(volsamples, 1), size(volSizes, 2));
+    patches = repmat({nan(nSamples, prod(patchSize))}, [1, numel(volnames)]);
+    locsamples = nan(size(volsamples, 1), size(volSizes, 2));
     
-    for vi = find(nSamples(:)' > 0)
+    for vi = find(nSamplesVol(:)' > 0)
         inds = find(volsamples == vi);
         
         % load volume. 
@@ -153,14 +153,14 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
             idx = randsample(sum(totSizes), nSamples);
             
             ctotSizes = [0, cumsum(totSizes(:)')];
-            ci = 1;
+            ci = 0;
             for i = 1:numel(mfstruct)
                 f = find(idx >= (ctotSizes(i) + 1) & idx <= ctotSizes(i+1));
                 locidx((ci + 1):(ci + numel(f))) = idx(f) - ctotSizes(i);
                 volidx((ci + 1):(ci + numel(f))) = i;
                 ci = ci + numel(f);
             end
-            assert(ci == nSamples+1);
+            assert(ci == nSamples);
             volidx = volidx(:);
             locidx = locidx(:);
             
