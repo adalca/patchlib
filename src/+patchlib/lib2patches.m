@@ -32,7 +32,7 @@ function patches = lib2patches(lib, pIdx, varargin)
     % create the patches
     
     for i = 1:numel(lib)
-        fprintf('lib2patches: lib %d of %d\n', i, numel(lib));
+        % if numel(lib) > 1, fprintf('lib2patches: lib %d of %d\n', i, numel(lib)); end
         tlib = lib{i};
         if ~isempty(libfn)
             tlib = libfn(tlib, patchSize);
