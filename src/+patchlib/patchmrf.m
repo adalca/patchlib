@@ -101,6 +101,12 @@ function [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs)
         dispSubperm = permute(dispSub, [3, 2, 1]); % will use the permutation version
     end
     
+    if ~isempty(inputs.existingDisp)
+        % assuming it's nPts x nDims
+        ex = permute(inputs.existingDisp, [3, 2, 1]);
+        dispSubperm = bsxfun(@plus, dispSubperm, ex);
+    end
+    
     % precomputation of overlap regions
     olregions = patchlib.overlapRegionsPrecomp(inputs.patchSize, inputs.patchOverlap);
     
@@ -224,6 +230,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('refgridsize', [], @(x) isnumeric(x) || iscell(x));
     p.addParameter('gridIdx', [], @isnumeric);
     p.addParameter('srcSize', [], @isnumeric);
+    p.addParameter('existingDisp', [], @isnumeric);
     p.addParameter('connectivity', 3^numel(gridSize)-1, @isnumeric);
     p.addParameter('inferMethod', @UGM_Infer_LBP, @isfunc);
     p.parse(paramvalues{:})
