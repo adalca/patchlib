@@ -58,20 +58,25 @@ function [qpatches, varargout] = patchmrf(varargin)
     % extract max nodes. TODO: look into UGM decode methods.
     [~, maxNodes] = max(nodeBel, [], 2);
     
-    % create index in pDst - sized array
-    qSel = sub2ind(size(pDst), (1:size(pDst, 1))', maxNodes(:));
+    
+    
+    % get indexes in pDst(NxK) of optimal solutions for each node.
+    qSelIdx = sub2ind(size(pDst), (1:size(pDst, 1))', maxNodes(:));
+    
+    % permute patches to be NxPxK --> PxNxK
     permpatches = permute(patches, [2, 1, 3]); % each row is a voxel
-    qpatches = permpatches(:, qSel)'; % for each voxel, use the selection
+    qpatches = permpatches(:, qSelIdx)'; % for each voxel, use the selection
+    
     pIdxSel = []; rIdxSel = [];
     if nargout >= 4 && ~isempty(inputs.pIdx)
-        pIdxSel = inputs.pIdx(qSel);
-        rIdxSel = inputs.rIdx(qSel);
+        pIdxSel = inputs.pIdx(qSelIdx);
+        rIdxSel = inputs.rIdx(qSelIdx);
     end
     
     % prepare outputs
     belstruct = structrich(nodeBel, edgeBel, logZ, maxNodes);
     potstruct = structrich(nodePot, edgePot, edgeStruct);
-    vargout = {belstruct, potstruct, qSel, pIdxSel, rIdxSel};
+    vargout = {belstruct, potstruct, qSelIdx, pIdxSel, rIdxSel};
     varargout = vargout(1:nargout);
 end
 
@@ -217,12 +222,22 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('pIdx', [], @isnumeric);
     p.addParameter('rIdx', [], @isnumeric);
     p.addParameter('refgridsize', [], @(x) isnumeric(x) || iscell(x));
-    p.addParameter('gridIdx', 1:prod(gridSize), @isnumeric);
+    p.addParameter('gridIdx', [], @isnumeric);
     p.addParameter('srcSize', [], @isnumeric);
     p.addParameter('connectivity', 3^numel(gridSize)-1, @isnumeric);
-    p.addParameter('infer_method', @UGM_Infer_LBP, @isfunc);
+    p.addParameter('inferMethod', @UGM_Infer_LBP, @isfunc);
     p.parse(paramvalues{:})
     inputs = p.Results;
+    
+    if ismember('gridIdx', p.UsingDefaults)
+        if ~ismember('srcSize', p.UsingDefaults)
+            inputs.gridIdx = patchlib.grid(inputs.srcSize, patchSize, patchOverlap);
+            
+        else
+            assert(all(patchOverlap == (patchSize - 1)), 'if not sliding, need source size');
+            inputs.gridIdx = 1:prod(gridSize);
+        end
+    end
     
     inputs.patchSize = patchSize;
     inputs.patchOverlap = patchOverlap;

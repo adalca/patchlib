@@ -1,4 +1,13 @@
 function dst = correspdst(pstr1, pstr2, ~, ~, dvFact, usemex)
+% TODO: take out the dvFact.
+% TODO: the limit should be passed in (?)
+%
+% TODO: redo function to behave like 
+%   dst = (pstr1, pstr2, params)
+%   with params being:
+%       dvFact (??) <-- maybe not necessary
+%       usemex
+%       maxDist (??) <-- maybe not necessary
 
     if nargin <= 4 || isempty(dvFact)
         dvFact = 100;
@@ -20,12 +29,13 @@ function dst = correspdst(pstr1, pstr2, ~, ~, dvFact, usemex)
     % that checks for (exist('pdist2mex', 'file') == 3) would be very costly, since that's a file
     % system check at every call. 
     if usemex
-        dst = pdist2mex(X',Y','euc',[],[],[]);
+        dst = pdist2mex(X', Y', 'euc', [], [], []);
+        
     else
-        dst = pdist2(pstr1.disp ./ dvFact, pstr2.disp ./dvFact);
+        dst = pdist2(X, Y);
     end
     
-    dst = min(dst, 1);
+    % dst = min(dst, 1);
     
 %     error('this might be wrong. need to subtract patchOverlap from patches2?');
 end
