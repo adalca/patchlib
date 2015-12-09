@@ -52,7 +52,7 @@ function [qpatches, varargout] = patchmrf(varargin)
     [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs);
     
     % run Loopy BP via UGM
-    [nodeBel, edgeBel, logZ] = inputs.infer_method(nodePot, edgePot+eps, edgeStruct);
+    [nodeBel, edgeBel, logZ] = inputs.inferMethod(nodePot, edgePot+eps, edgeStruct);
     assert(isclean(nodeBel), 'PATCHLIB:PATCHMRF', 'UGMLBP: Bad nodeBel.');
         
     % extract max nodes. TODO: look into UGM decode methods.
