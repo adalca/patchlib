@@ -10,7 +10,7 @@ function dst = correspdst(pstr1, pstr2, ~, ~, dvFact, usemex)
 %       maxDist (??) <-- maybe not necessary
 
     if nargin <= 4 || isempty(dvFact)
-        dvFact = 100;
+        dvFact = 1;
     end
     
     if nargin <= 5
