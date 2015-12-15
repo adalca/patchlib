@@ -50,6 +50,7 @@ function [qpatches, varargout] = patchmrf(varargin)
 
     % Edge potentials.
     [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs);
+    assert(isclean(edgePot), 'PATCHLIB:PATCHMRF', 'patchmrf: Bad edgePot.');
     
     % run Loopy BP via UGM
     [nodeBel, edgeBel, logZ] = inputs.inferMethod(nodePot, edgePot+eps, edgeStruct);
@@ -105,6 +106,7 @@ function [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs)
         % assuming it's nPts x nDims
         ex = permute(inputs.existingDisp, [3, 2, 1]);
         dispSubperm = bsxfun(@plus, dispSubperm, ex);
+        assert(isclean(dispSubperm));
     end
     
     % precomputation of overlap regions
@@ -146,6 +148,7 @@ function [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs)
         % get the distance.
         dst = inputs.edgeDst(pstr1, pstr2, olregions, inputs);
         edgePot(:, :, e) = exp(-inputs.lambda_edge * dst);
+        % assert(~any(isnan(exp(-inputs.lambda_edge * dst(:)))));
     end
 end
 
