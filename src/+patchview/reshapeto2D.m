@@ -9,7 +9,7 @@ function reshapedPatches = reshapeto2D(patches, patchSize)
 
     if nargin == 1
         patchSize = size(patches);
-        reshapedPatches = reshape(patches(:), [patchSize(1), prod(patchSize(2:end)]);
+        reshapedPatches = reshape(patches(:), [patchSize(1), prod(patchSize(2:end))]);
 
     else
         % split into a cell of patches
