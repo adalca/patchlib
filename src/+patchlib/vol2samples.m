@@ -126,6 +126,7 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
         volSizes = cellfunc(@(m) size(m, volnames{1}), mfstruct);
     end
     volSizes = cat(1, volSizes{:});
+    effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
 
     % make nSamples a vector (get the number of samples in each volume)
     nVols = numel(mfstruct);
@@ -138,13 +139,12 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
         end
         
         assert(numel(nSamples) == numel(mfstruct))
-        [volidx, locidx] = samplePatchesInVol(nSamples, volSizes, replace);
+        [volidx, locidx] = samplePatchesInVol(nSamples, effVolSizes, replace);
         
     % without replacement, need to worry about size of samples assigned to each volume. For
     % example, need to avoid wanting to sample more samples from volume 1 than are available.
     else
-        if isscalar(nSamples)
-            effVolSizes = bsxfun(@minus, volSizes, patchSize + 1); % effective (samplable) size
+        if isscalar(nSamples) % assume you're given the *total* number of samples
             totSizes = prod(effVolSizes, 2);
             assert(nSamples <= sum(totSizes)); % make sure we're not asking for too many samples.
             
@@ -164,9 +164,10 @@ function [volidx, locidx, volSizes] = sample(nSamples, mfstruct, volnames, patch
             volidx = volidx(:);
             locidx = locidx(:);
             
-        else
+        else % given samples *per subject*
+            
             assert(numel(nSamples) == numel(mfstruct));
-            [volidx, locidx] = samplePatchesInVol(nSamples, volSizes, replace);
+            [volidx, locidx] = samplePatchesInVol(nSamples, effVolSizes, replace);
         end
     end
 end
