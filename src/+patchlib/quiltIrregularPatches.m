@@ -1,4 +1,4 @@
-function vol = quiltIrregularPatches(locations, patches, varargin)
+function [vol, countvol] = quiltIrregularPatches(locations, patches, varargin)
 % quilt (create a volume) out of irregularly placed patches
 %
 % patches is a cell array of patches. Some cell entries can be empty (we assume all-nan patch in that case.
@@ -24,11 +24,14 @@ function vol = quiltIrregularPatches(locations, patches, varargin)
     
     % compute final volume.
     if isempty(inputs.weightPatches)
-        sm = sum(patchStack, 2) ./ sum(entries, 2);
+        countvol = sum(entries, 2);
+        sm = sum(patchStack, 2) ./ countvol;
     else
-        sm = sum(weightStack .* patchStack, 2) ./ sum(weightStack, 2);
+        countvol = sum(weightStack, 2);
+        sm = sum(weightStack .* patchStack, 2) ./ countvol;
     end
     vol = reshape(full(sm), inputs.volSize);
+    countvol = reshape(full(countvol), inputs.volSize);
 end
 
 function inputs = parseInputs(subLocation, reconPatches, varargin)
