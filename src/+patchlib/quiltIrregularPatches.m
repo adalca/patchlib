@@ -42,12 +42,15 @@ function inputs = parseInputs(subLocation, reconPatches, varargin)
     p.addRequired('subLocation', @iscell);
     p.addRequired('reconPatches', @iscell);
     p.addParameter('volSize', [], @isvector);
-    p.addParameter('weightPatches', [], @isvector);
+    p.addParameter('weightPatches', {}, @iscell);
     p.parse(subLocation, reconPatches, varargin{:});
     inputs = p.Results;
     
     if isempty(inputs.volSize)
-        c = cat(1, subLocation{:});
+        
+        maxlocs = cellfunc(@(l, s) l + size(s) - 1, subLocation, reconPatches);
+        c = cat(1, maxlocs{:});
+        
         inputs.volSize = max(c, [], 1);
     end
 end
