@@ -16,7 +16,7 @@ function reshapedPatches = reshapeto2D(patches, patchSize)
         patchescell = dimsplit(1, patches);
 
         % reshape each patch
-        pfn = @(p) patchview.reshapeto2D(reshape(p, patchSize), patchSize);
+        pfn = @(p) patchview.reshapeto2D(reshape(p, patchSize));
         patchesreshapedcell = cellfunc(pfn, patchescell);
 
         % add a line between patches.
