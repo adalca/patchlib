@@ -30,6 +30,7 @@ function [qpatches, varargout] = patchmrf(varargin)
 %       pIdx
 %       refgridsize
 %       infer_method: function handle. fault: @UGM_Infer_LBP
+%       excludeNodes
 %
 %   [qpatches, bel, pot, qSel, pIdxSel, rIdxSel] = patchmrf(...). see qSel use in code.
 %
@@ -46,7 +47,7 @@ function [qpatches, varargout] = patchmrf(varargin)
     end
     
     % Node potentials. Should be nNodes x nStates;
-    nodePot = exp(-inputs.lambda_node * pDst);
+    nodePot = exp(-inputs.lambda_node * pDst(inputs.keepNodes, :));
 
     % Edge potentials.
     [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs);
@@ -62,16 +63,18 @@ function [qpatches, varargout] = patchmrf(varargin)
     
     
     % get indexes in pDst(NxK) of optimal solutions for each node.
-    qSelIdx = sub2ind(size(pDst), (1:size(pDst, 1))', maxNodes(:));
+    qSelIdx = sub2ind(size(pDst(inputs.keepNodes, :)), (1:numel(inputs.keepNodes))', maxNodes(:));
     
     % permute patches to be NxPxK --> PxNxK
-    permpatches = permute(patches, [2, 1, 3]); % each row is a voxel
+    permpatches = permute(patches(inputs.keepNodes, :, :), [2, 1, 3]); % each row is a voxel
     qpatches = permpatches(:, qSelIdx)'; % for each voxel, use the selection
     
     pIdxSel = []; rIdxSel = [];
     if nargout >= 4 && ~isempty(inputs.pIdx)
-        pIdxSel = inputs.pIdx(qSelIdx);
-        rIdxSel = inputs.rIdx(qSelIdx);
+        pIdxSel = inputs.pIdx(inputs.keepNodes, :);
+        rIdxSel = inputs.rIdx(inputs.keepNodes, :);
+        pIdxSel = pIdxSel(qSelIdx);
+        rIdxSel = rIdxSel(qSelIdx);
     end
     
     % prepare outputs
@@ -114,8 +117,9 @@ function [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs)
     
     % create edge structure - should be the right size
     adj = vol2adjacency(gridSize, inputs.connectivity);
+    adj = adj(inputs.keepNodes, inputs.keepNodes);
     nStates = size(patches, 3);
-    edgeStruct = UGM_makeEdgeStruct(adj, nStates , true, inputs.maxLBPIters);
+    edgeStruct = UGM_makeEdgeStruct(adj, nStates, true, inputs.maxLBPIters);
     
     % compute distances. 
     % TODO: this computation is doubled for no reason :(
@@ -125,8 +129,8 @@ function [edgePot, edgeStruct] = prepEdgePot(patches, gridSize, inputs)
 %     par
     for e = 1:edgeStruct.nEdges
         locedgeEnds = edgeEnds(e, :);
-        n1 = locedgeEnds(1);
-        n2 = locedgeEnds(2);
+        n1 = inputs.keepNodes(locedgeEnds(1));
+        n2 = inputs.keepNodes(locedgeEnds(2));
         
         % extract the patches for these two node
         patches1 = patchesperm(:, :, n1);
@@ -154,7 +158,7 @@ end
 
 
 
-function [patches, gridSize, dst, inputs] = parseinputs(varargin)
+function [patches, gridSize, pDst, inputs] = parseinputs(varargin)
 % parse inputs
 
     % break down varargin in first inputs and param/value inputs.
@@ -178,7 +182,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     assert(numel(mainargs) >= 3 && numel(mainargs) <= 5);
     patches = mainargs{1};
     gridSize = mainargs{2};
-    dst = mainargs{3};
+    pDst = mainargs{3};
     if numel(mainargs) >= 4
         patchSize = mainargs{4};
     end
@@ -209,8 +213,8 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     end
 
     % some checks. Patches should be NxVxK now, dst should be NxK, where N == prod(gridSize);
-    assert(size(patches, 1) == size(dst, 1), 'Patches should be NxVxK now, dst should be NxK');
-    assert(size(patches, 3) == size(dst, 2), 'Patches should be NxVxK now, dst should be NxK');
+    assert(size(patches, 1) == size(pDst, 1), 'Patches should be NxVxK now, dst should be NxK');
+    assert(size(patches, 3) == size(pDst, 2), 'Patches should be NxVxK now, dst should be NxK');
     assert(size(patches, 1) == prod(gridSize));
     
     % get patch overlap
@@ -234,6 +238,7 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     p.addParameter('gridIdx', [], @isnumeric);
     p.addParameter('srcSize', [], @isnumeric);
     p.addParameter('existingDisp', [], @isnumeric);
+    p.addParameter('excludeNodes', [], @isnumeric);
     p.addParameter('connectivity', 3^numel(gridSize)-1, @isnumeric);
     p.addParameter('inferMethod', @UGM_Infer_LBP, @isfunc);
     p.parse(paramvalues{:})
@@ -261,6 +266,9 @@ function [patches, gridSize, dst, inputs] = parseinputs(varargin)
     if ~isempty(inputs.pIdx) && ismember('rIdx', p.UsingDefaults)
     	inputs.rIdx = ones(size(inputs.pIdx));
     end
+    
+    inputs.keepNodes = 1:size(pDst, 1);
+    inputs.keepNodes(inputs.excludeNodes) = [];
     
     inputs.useMex = exist('pdist2mex', 'file') == 3;
 end
