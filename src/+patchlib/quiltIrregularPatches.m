@@ -10,8 +10,7 @@ function [vol, countvol] = quiltIrregularPatches(locations, patches, varargin)
     inputs = parseInputs(locations, patches, varargin{:});
         
     % build sparse stacks
-    [patchStack, entries] = ...
-        patchlib.stackIrregularPatches(locations, patches, inputs.volSize);
+    [patchStack, entries] = patchlib.stackIrregularPatches(locations, patches, inputs.volSize);
     stackNans = isnan(patchStack);
     entries(stackNans) = 0;
     patchStack(stackNans) = 0;
@@ -19,8 +18,8 @@ function [vol, countvol] = quiltIrregularPatches(locations, patches, varargin)
     % compute weight stack if necessary
     if ~isempty(inputs.weightPatches)   
         weightStack = patchlib.stackIrregularPatches(locations, inputs.weightPatches, inputs.volSize);
-        weightStack(stackNans) = 0;
     end
+    weightStack(stackNans) = 0;
     
     % compute final volume.
     if isempty(inputs.weightPatches)
