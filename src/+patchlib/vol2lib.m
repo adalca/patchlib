@@ -127,9 +127,9 @@ function varargout = vol2lib(vol, patchSize, varargin)
         end
         
         if ~isempty(opt.locations)
-            assert(all(patchOverlap == (patchSize + 1)));
+            % assert(all(patchOverlap == (patchSize + 1))); % meant to say patchSize - 1?
             grididx = subvec2ind(gridSize, opt.locations);
-            outlib = outlib(idxsamples, :);
+            outlib = outlib(grididx, :); % was 'idxsamples' instead of grididx. Problem?
             gridSize = NaN;
         end
     end
